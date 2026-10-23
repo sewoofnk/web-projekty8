@@ -311,6 +311,69 @@ button:focus-visible {
   margin-bottom: 1.25rem;
 }
 
+/* Touch devices: no sticky hover, instead a quick press effect */
+@media (hover: none) {
+  .card:hover {
+    transform: none;
+    box-shadow: var(--shadow-card);
+    border-color: var(--clr-border);
+  }
+
+  .card:hover::before {
+    opacity: 0;
+  }
+
+  .card:hover .card-link {
+    gap: 0.35rem;
+  }
+
+  a.card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  a.card:active {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(0.97);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  }
+
+  a.card:active::before {
+    opacity: 0.08;
+  }
+
+  .btn:hover {
+    transform: none;
+  }
+
+  .btn:active,
+  .download-btn:active,
+  .theme-toggle:active {
+    transform: scale(0.96);
+  }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a.card,
+.card-toggle,
+.btn,
+.theme-toggle,
+.contact-submit {
+  touch-action: manipulation;
+}
+
+/* Lighter effects on small screens (cheaper to render on phones) */
+@media (max-width: 600px) {
+  .hero-blob {
+    filter: blur(50px);
+  }
+
+  header {
+    backdrop-filter: blur(8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 
@@ -321,7 +384,8 @@ button:focus-visible {
 
   .card, .btn { transition: none; }
 
-  a.card:hover {
+  a.card:hover,
+  a.card:active {
     transform: translateY(-4px);
   }
 }

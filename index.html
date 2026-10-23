@@ -321,17 +321,26 @@
     // Jemné naklonenie odkazových kariet podľa polohy myši
     var maxTilt = 6;
     document.querySelectorAll('a.card').forEach(function (card) {
-      card.addEventListener('pointermove', function (e) {
-        if (e.pointerType !== 'mouse') return;
+      function tilt(e) {
         var r = card.getBoundingClientRect();
         var x = (e.clientX - r.left) / r.width - 0.5;
         var y = (e.clientY - r.top) / r.height - 0.5;
         card.style.setProperty('--ry', (x * 2 * maxTilt).toFixed(2) + 'deg');
         card.style.setProperty('--rx', (-y * 2 * maxTilt).toFixed(2) + 'deg');
-      });
-      card.addEventListener('pointerleave', function () {
+      }
+      function reset() {
         card.style.removeProperty('--rx');
         card.style.removeProperty('--ry');
+      }
+      // Myš: sleduje pohyb. Dotyk: naklonenie len počas stlačenia (pri skrolovaní sa zruší).
+      card.addEventListener('pointermove', function (e) {
+        if (e.pointerType === 'mouse') tilt(e);
+      });
+      card.addEventListener('pointerdown', function (e) {
+        if (e.pointerType !== 'mouse') tilt(e);
+      });
+      ['pointerleave', 'pointerup', 'pointercancel'].forEach(function (ev) {
+        card.addEventListener(ev, reset);
       });
     });
 
