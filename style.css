@@ -20,7 +20,10 @@
   --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
 }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -70,6 +73,37 @@ header {
   text-decoration: none;
 }
 
+.header-inner {
+  justify-content: space-between;
+}
+
+.header-nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.header-nav a {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--clr-muted);
+  text-decoration: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.header-nav a:hover {
+  color: var(--clr-text);
+  background: var(--clr-surface-2);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--clr-accent-2);
+  outline-offset: 3px;
+  border-radius: 0.4rem;
+}
+
 /* ================================================
    Hero
    ================================================ */
@@ -114,10 +148,114 @@ header {
 }
 
 .hero-sub {
-  font-size: 1.05rem;
+  font-size: clamp(0.98rem, 2.4vw, 1.1rem);
   color: var(--clr-muted);
   max-width: 480px;
   margin: 0 auto;
+}
+
+/* Pulse line under the title: a glow travels left -> right every 3 s */
+.pulse-line {
+  position: relative;
+  width: min(320px, 70%);
+  height: 3px;
+  margin: 0 auto 1.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.pulse-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 35%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--clr-accent-2), #fff, var(--clr-accent-2), transparent);
+  box-shadow: 0 0 12px var(--clr-accent-2);
+  transform: translateX(-100%);
+  animation: pulse-sweep 3s ease-in-out infinite;
+}
+
+@keyframes pulse-sweep {
+  0%   { transform: translateX(-100%); }
+  45%  { transform: translateX(300%); }
+  100% { transform: translateX(300%); }
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.7rem 1.4rem;
+  border-radius: 0.75rem;
+  transition: transform 0.2s ease, filter 0.2s ease, background 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--clr-accent), var(--clr-accent-2));
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn-ghost {
+  color: var(--clr-text);
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+}
+
+.btn-ghost:hover {
+  background: var(--clr-surface-2);
+}
+
+.hero-stat {
+  margin-top: 1.75rem;
+  font-size: 0.82rem;
+  color: var(--clr-muted);
+}
+
+.hero-stat strong {
+  color: var(--clr-text);
+  font-weight: 700;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  .pulse-line::after {
+    animation: none;
+    transform: translateX(100%);
+  }
+
+  .card, .btn { transition: none; }
 }
 
 /* Decorative blobs */
@@ -436,6 +574,24 @@ footer {
 @media (max-width: 600px) {
   .hero {
     padding: 3.5rem 1.25rem 3rem;
+  }
+
+  .container,
+  .header-inner {
+    padding: 0 1.1rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .card {
+    padding: 1.4rem;
+  }
+
+  .header-nav a {
+    padding: 0.4rem 0.55rem;
   }
 
   .cards-grid {

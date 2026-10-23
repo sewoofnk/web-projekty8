@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Moje projekty</title>
+  <title>Projekty | molej.dev</title>
+  <meta name="description" content="Zbierka webových aplikácií a projektov – letecké dáta, počasie, porovnávanie cien a ďalšie.">
+  <meta name="theme-color" content="#0f0f13">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,31 +16,42 @@
   <!-- Hero / Header -->
   <header>
     <div class="header-inner">
-      <div class="header-logo">
+      <a class="header-logo" href="#top" aria-label="molej.dev – domov">
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="32" height="32" rx="8" fill="white" fill-opacity="0.15"/>
           <path d="M8 16L14 10L20 16L26 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M8 22L14 16L20 22L26 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
         </svg>
         <span>molej.dev</span>
-      </div>
+      </a>
+      <nav class="header-nav" aria-label="Hlavná navigácia">
+        <a href="#projekty">Projekty</a>
+        <a href="#kontakt">Kontakt</a>
+      </nav>
     </div>
   </header>
 
   <!-- Hero -->
-  <section class="hero">
+  <section class="hero" id="top">
     <div class="hero-inner">
-      <p class="hero-label">Portfólio projektov</p>
-      <h1 class="hero-title">Moje projekty</h1>
+      <p class="hero-label">Portfólio</p>
+      <h1 class="hero-title">Projekty</h1>
+      <div class="pulse-line" aria-hidden="true"></div>
       <p class="hero-sub">Zbierka webových aplikácií a projektov, na ktorých pracujem.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#projekty">Pozrieť projekty</a>
+        <a class="btn btn-ghost" href="#kontakt">Kontaktovať ma</a>
+      </div>
+      <p class="hero-stat"><strong id="project-count">7</strong> projektov v portfóliu</p>
     </div>
     <div class="hero-blob blob1"></div>
     <div class="hero-blob blob2"></div>
   </section>
 
   <!-- Cards -->
-  <main>
+  <main id="projekty">
     <div class="container">
+      <h2 class="section-title">Moje práce</h2>
       <div class="cards-grid">
 
         <!-- FlightRadar -->
@@ -207,7 +220,7 @@
         </a>
 
         <!-- Kontakt -->
-        <div class="card">
+        <div class="card" id="kontakt">
           <div class="card-icon" style="--icon-color: #0ea5e9; --icon-bg: #f0f9ff;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -261,6 +274,9 @@
   </footer>
 
   <script>
+    var projectCards = document.querySelectorAll('.cards-grid .card:not(#kontakt)').length;
+    document.getElementById('project-count').textContent = projectCards;
+
     document.querySelectorAll('.card-toggle').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') === 'true';
