@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Moje projekty</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -206,7 +207,7 @@
         </a>
 
         <!-- Kontakt -->
-        <a href="mailto:info@example.com" class="card">
+        <div class="card">
           <div class="card-icon" style="--icon-color: #0ea5e9; --icon-bg: #f0f9ff;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -218,13 +219,35 @@
             <p class="card-desc">Kontaktujte ma pre viac informácií o projektoch.</p>
           </div>
           <div class="card-footer">
-            <span class="card-link">Napísať e‑mail
-              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 0 0 1.06 0l7.22-7.22v5.69a.75.75 0 0 0 1.5 0v-7.5a.75.75 0 0 0-.75-.75h-7.5a.75.75 0 0 0 0 1.5h5.69L5.22 13.72a.75.75 0 0 0 0 1.06z"/>
+            <button type="button" class="card-link card-toggle contact-toggle" aria-expanded="false" aria-controls="contact-form-wrap">Napísať správu
+              <svg class="chevron" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd" d="M5.22 7.22a.75.75 0 0 1 1.06 0L10 10.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.28a.75.75 0 0 1 0-1.06z"/>
               </svg>
-            </span>
+            </button>
           </div>
-        </a>
+          <div class="card-details" id="contact-form-wrap">
+            <div class="card-details-inner">
+              <form class="contact-form" id="contact-form" novalidate>
+                <!-- Web3Forms: sem vlož svoj Access Key (https://web3forms.com) -->
+                <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+                <input type="hidden" name="from_name" value="molej.dev kontaktný formulár">
+                <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
+
+                <label for="cf-subject">Nadpis</label>
+                <input type="text" id="cf-subject" name="subject" required maxlength="150">
+
+                <label for="cf-email">Váš mail</label>
+                <input type="email" id="cf-email" name="email" required maxlength="150">
+
+                <label for="cf-message">Popis</label>
+                <textarea id="cf-message" name="message" rows="5" required maxlength="3000"></textarea>
+
+                <button type="submit" class="download-btn contact-submit">Odoslať</button>
+                <p class="form-status" id="contact-status" role="status" aria-live="polite"></p>
+              </form>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -245,6 +268,38 @@
         btn.setAttribute('aria-expanded', String(!open));
         document.getElementById(btn.getAttribute('aria-controls')).classList.toggle('open', !open);
       });
+    });
+
+    var form = document.getElementById('contact-form');
+    var statusEl = document.getElementById('contact-status');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      statusEl.className = 'form-status';
+      if (!form.checkValidity()) {
+        statusEl.textContent = 'Vyplňte prosím všetky polia správne.';
+        statusEl.classList.add('error');
+        return;
+      }
+      var btn = form.querySelector('.contact-submit');
+      btn.disabled = true;
+      statusEl.textContent = 'Odosielam…';
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(new FormData(form)))
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data.success) throw new Error(data.message);
+          form.reset();
+          statusEl.textContent = 'Ďakujem, správa bola odoslaná.';
+          statusEl.classList.add('ok');
+        })
+        .catch(function () {
+          statusEl.textContent = 'Odoslanie sa nepodarilo. Skúste to prosím neskôr.';
+          statusEl.classList.add('error');
+        })
+        .then(function () { btn.disabled = false; });
     });
   </script>
 

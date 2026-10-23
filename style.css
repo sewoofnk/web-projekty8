@@ -344,6 +344,73 @@ a.card-link:hover {
   filter: brightness(1.12);
 }
 
+/* Contact form */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 1.1rem;
+  cursor: default;
+}
+
+.contact-form label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--clr-muted);
+  margin-top: 0.4rem;
+}
+
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--clr-text);
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  resize: vertical;
+  position: relative;
+  z-index: 1;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: var(--icon-color, var(--clr-accent));
+}
+
+.contact-form .hp {
+  position: absolute;
+  left: -9999px;
+}
+
+.contact-submit {
+  align-self: flex-start;
+  margin-top: 0.8rem;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+.contact-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.form-status {
+  font-size: 0.82rem;
+  min-height: 1.2em;
+  color: var(--clr-muted);
+}
+
+.form-status.ok { color: #10b981; }
+.form-status.error { color: #ef4444; }
+
 /* ================================================
    Footer
    ================================================ */
