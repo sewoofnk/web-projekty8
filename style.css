@@ -18,6 +18,34 @@
   --clr-accent-2: #a855f7;
   --radius: 1rem;
   --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-card-hover: 0 16px 40px rgba(0,0,0,0.5);
+  --clr-header-bg: rgba(15, 15, 19, 0.85);
+  --clr-border-hover: rgba(255,255,255,0.14);
+  --clr-line: rgba(255,255,255,0.1);
+  --hero-title-from: #fff;
+  --pulse-core: #fff;
+  --blob-opacity: 0.18;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --clr-bg: #f6f6fb;
+  --clr-surface: #ffffff;
+  --clr-surface-2: #eeeef6;
+  --clr-border: rgba(15,15,35,0.1);
+  --clr-text: #17172a;
+  --clr-muted: #5b5b72;
+  --clr-accent: #7c3aed;
+  --clr-accent-2: #9333ea;
+  --shadow-card: 0 4px 20px rgba(30,30,70,0.08);
+  --shadow-card-hover: 0 16px 36px rgba(30,30,70,0.16);
+  --clr-header-bg: rgba(246, 246, 251, 0.85);
+  --clr-border-hover: rgba(15,15,35,0.2);
+  --clr-line: rgba(15,15,35,0.1);
+  --hero-title-from: #17172a;
+  --pulse-core: #c084fc;
+  --blob-opacity: 0.12;
+  color-scheme: light;
 }
 
 html {
@@ -48,7 +76,7 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(15, 15, 19, 0.85);
+  background: var(--clr-header-bg);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--clr-border);
 }
@@ -75,12 +103,48 @@ header {
 
 .header-inner {
   justify-content: space-between;
+  gap: 1rem;
+}
+
+.header-logo svg rect { fill: currentColor; fill-opacity: 0.12; }
+.header-logo svg path { stroke: currentColor; }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .header-nav {
   display: flex;
   gap: 0.25rem;
 }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 0.6rem;
+  color: var(--clr-text);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--clr-surface-2);
+  border-color: var(--clr-border-hover);
+}
+
+.theme-toggle svg { width: 18px; height: 18px; }
+.theme-toggle .icon-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun,
+:root:not([data-theme]) .theme-toggle .icon-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .icon-moon,
+:root:not([data-theme]) .theme-toggle .icon-moon { display: none; }
 
 .header-nav a {
   font-size: 0.9rem;
@@ -140,7 +204,7 @@ button:focus-visible {
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1.1;
-  background: linear-gradient(135deg, #fff 30%, var(--clr-accent-2));
+  background: linear-gradient(135deg, var(--hero-title-from) 30%, var(--clr-accent-2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -161,7 +225,7 @@ button:focus-visible {
   height: 3px;
   margin: 0 auto 1.5rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--clr-line);
   overflow: hidden;
 }
 
@@ -173,7 +237,7 @@ button:focus-visible {
   left: 0;
   width: 35%;
   border-radius: inherit;
-  background: linear-gradient(90deg, transparent, var(--clr-accent-2), #fff, var(--clr-accent-2), transparent);
+  background: linear-gradient(90deg, transparent, var(--clr-accent-2), var(--pulse-core), var(--clr-accent-2), transparent);
   box-shadow: 0 0 12px var(--clr-accent-2);
   transform: translateX(-100%);
   animation: pulse-sweep 3s ease-in-out infinite;
@@ -256,6 +320,10 @@ button:focus-visible {
   }
 
   .card, .btn { transition: none; }
+
+  a.card:hover {
+    transform: translateY(-4px);
+  }
 }
 
 /* Decorative blobs */
@@ -263,7 +331,7 @@ button:focus-visible {
   position: absolute;
   border-radius: 50%;
   filter: blur(80px);
-  opacity: 0.18;
+  opacity: var(--blob-opacity);
   pointer-events: none;
 }
 
@@ -327,12 +395,19 @@ main {
 
 .card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255,255,255,0.14);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  border-color: var(--clr-border-hover);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .card:hover::before {
   opacity: 0.06;
+}
+
+/* Link cards tilt slightly toward the mouse (--rx/--ry set from JS) */
+@media (hover: hover) and (pointer: fine) {
+  a.card:hover {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-4px);
+  }
 }
 
 /* Icon */

@@ -6,6 +6,17 @@
   <title>Projekty | molej.dev</title>
   <meta name="description" content="Zbierka webových aplikácií a projektov – letecké dáta, počasie, porovnávanie cien a ďalšie.">
   <meta name="theme-color" content="#0f0f13">
+  <script>
+    // Nastaví tému pred vykreslením (uložená voľba, inak podľa systému)
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') {
+        t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,10 +35,21 @@
         </svg>
         <span>molej.dev</span>
       </a>
-      <nav class="header-nav" aria-label="Hlavná navigácia">
-        <a href="#projekty">Projekty</a>
-        <a href="#kontakt">Kontakt</a>
-      </nav>
+      <div class="header-right">
+        <nav class="header-nav" aria-label="Hlavná navigácia">
+          <a href="#projekty">Projekty</a>
+          <a href="#kontakt">Kontakt</a>
+        </nav>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Prepnúť svetlý/tmavý režim" title="Prepnúť svetlý/tmavý režim">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -274,6 +296,45 @@
   </footer>
 
   <script>
+    var root = document.documentElement;
+    var themeMeta = document.querySelector('meta[name="theme-color"]');
+    function applyTheme(t) {
+      root.setAttribute('data-theme', t);
+      if (themeMeta) themeMeta.setAttribute('content', t === 'light' ? '#f6f6fb' : '#0f0f13');
+    }
+    function storedTheme() {
+      try { return localStorage.getItem('theme'); } catch (e) { return null; }
+    }
+    applyTheme(root.getAttribute('data-theme'));
+
+    document.getElementById('theme-toggle').addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+    });
+
+    // Sleduj zmenu systémového režimu, ak používateľ nevybral ručne
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function (e) {
+      if (!storedTheme()) applyTheme(e.matches ? 'light' : 'dark');
+    });
+
+    // Jemné naklonenie odkazových kariet podľa polohy myši
+    var maxTilt = 6;
+    document.querySelectorAll('a.card').forEach(function (card) {
+      card.addEventListener('pointermove', function (e) {
+        if (e.pointerType !== 'mouse') return;
+        var r = card.getBoundingClientRect();
+        var x = (e.clientX - r.left) / r.width - 0.5;
+        var y = (e.clientY - r.top) / r.height - 0.5;
+        card.style.setProperty('--ry', (x * 2 * maxTilt).toFixed(2) + 'deg');
+        card.style.setProperty('--rx', (-y * 2 * maxTilt).toFixed(2) + 'deg');
+      });
+      card.addEventListener('pointerleave', function () {
+        card.style.removeProperty('--rx');
+        card.style.removeProperty('--ry');
+      });
+    });
+
     var projectCards = document.querySelectorAll('.cards-grid .card:not(#kontakt)').length;
     document.getElementById('project-count').textContent = projectCards;
 
