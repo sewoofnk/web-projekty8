@@ -256,6 +256,94 @@ main {
   gap: 0.55rem;
 }
 
+/* Card with two actions + expandable details */
+.card-footer-split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+a.card-link {
+  text-decoration: none;
+}
+
+a.card-link:hover {
+  gap: 0.55rem;
+}
+
+.card-toggle {
+  background: none;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--clr-muted);
+  position: relative;
+  z-index: 1;
+}
+
+.card-toggle:hover {
+  color: var(--clr-text);
+}
+
+.card-toggle .chevron {
+  transition: transform 0.25s ease;
+}
+
+.card-toggle[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+.card-details {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+
+.card-details.open {
+  grid-template-rows: 1fr;
+}
+
+.card-details-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.install-steps {
+  margin: 1.1rem 0 1rem 1.2rem;
+  font-size: 0.85rem;
+  color: var(--clr-muted);
+  line-height: 1.55;
+}
+
+.install-steps li + li {
+  margin-top: 0.4rem;
+}
+
+.install-steps strong {
+  color: var(--clr-text);
+  font-weight: 600;
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--icon-color, var(--clr-accent));
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.6rem;
+  text-decoration: none;
+  transition: filter 0.2s ease;
+}
+
+.download-btn:hover {
+  filter: brightness(1.12);
+}
+
 /* ================================================
    Footer
    ================================================ */

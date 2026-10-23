@@ -123,7 +123,7 @@
         </a>
 
         <!-- JUTUBE -->
-        <a href="https://www.youtube.com/robots.txt#" target="_blank" class="card">
+        <div class="card">
           <div class="card-icon" style="--icon-color: #ef4444; --icon-bg: #fef2f2;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
@@ -134,14 +134,36 @@
             <h3 class="card-title">Jutube</h3>
             <p class="card-desc">Videá, hudba a obsah na jednom mieste.</p>
           </div>
-          <div class="card-footer">
-            <span class="card-link">Otvoriť projekt
+          <div class="card-footer card-footer-split">
+            <a class="card-link" href="https://www.youtube.com/robots.txt#" target="_blank">Otvoriť projekt
               <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                 <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 0 0 1.06 0l7.22-7.22v5.69a.75.75 0 0 0 1.5 0v-7.5a.75.75 0 0 0-.75-.75h-7.5a.75.75 0 0 0 0 1.5h5.69L5.22 13.72a.75.75 0 0 0 0 1.06z"/>
               </svg>
-            </span>
+            </a>
+            <button type="button" class="card-link card-toggle" aria-expanded="false" aria-controls="jutube-install">Ako nainštalovať?
+              <svg class="chevron" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd" d="M5.22 7.22a.75.75 0 0 1 1.06 0L10 10.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.28a.75.75 0 0 1 0-1.06z"/>
+              </svg>
+            </button>
           </div>
-        </a>
+          <div class="card-details" id="jutube-install">
+            <div class="card-details-inner">
+              <ol class="install-steps">
+                <li>Nainštaluj do prehliadača rozšírenie <strong>Tampermonkey</strong> (alebo Violentmonkey).</li>
+                <li>Stiahni súbor <strong>jutube.user.js</strong> tlačidlom nižšie.</li>
+                <li>Otvor stiahnutý súbor v prehliadači (alebo ho presuň do okna prehliadača) a klikni na <strong>Inštalovať</strong>.</li>
+                <li>Otvor <strong>youtube.com/robots.txt</strong> – tam sa Jutube spustí.</li>
+              </ol>
+              <a class="download-btn" href="downloads/jutube.user.js" download>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                  <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.69L6.28 8.47a.75.75 0 0 0-1.06 1.06l4.25 4.25a.75.75 0 0 0 1.06 0l4.25-4.25a.75.75 0 1 0-1.06-1.06l-2.97 2.97V2.75z"/>
+                  <path d="M3.5 13.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-1.5z"/>
+                </svg>
+                Stiahnuť jutube.user.js
+              </a>
+            </div>
+          </div>
+        </div>
 
         <!-- Ignition -->
         <a href="https://ignition8.pages.dev/" target="_blank" class="card">
@@ -216,7 +238,15 @@
     </div>
   </footer>
 
-</body>
-</html>
+  <script>
+    document.querySelectorAll('.card-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!open));
+        document.getElementById(btn.getAttribute('aria-controls')).classList.toggle('open', !open);
+      });
+    });
+  </script>
 
+</body>
 </html>
