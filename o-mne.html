@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>O mne | molej.dev</title>
+  <meta name="description" content="Matúš Olejník – autor všetkých projektov na molej.dev. Podrobný popis každého projektu.">
+  <meta name="theme-color" content="#0f0f13">
+  <script src="theme.js"></script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="about-page">
+
+  <header>
+    <div class="header-inner">
+      <a class="header-logo" href="index.html" aria-label="molej.dev – domov">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="white" fill-opacity="0.15"/>
+          <path d="M8 16L14 10L20 16L26 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 22L14 16L20 22L26 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+        </svg>
+        <span>molej.dev</span>
+      </a>
+      <div class="header-right">
+        <nav class="header-nav" aria-label="Hlavná navigácia">
+          <a href="index.html#projekty">Projekty</a>
+          <a href="o-mne.html" aria-current="page">O mne</a>
+          <a href="index.html#kontakt">Kontakt</a>
+        </nav>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Prepnúť svetlý/tmavý režim" title="Prepnúť svetlý/tmavý režim">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <p class="hero-label">Autor</p>
+      <h1 class="hero-title">O mne</h1>
+      <div class="pulse-line" aria-hidden="true"></div>
+      <p class="hero-sub">Matúš Olejník a projekty, ktoré som vytvoril.</p>
+    </div>
+    <div class="hero-blob blob1"></div>
+    <div class="hero-blob blob2"></div>
+  </section>
+
+  <main>
+    <div class="container">
+
+      <div class="about-box">
+        <p class="about-lead">Volám sa <strong>Matúš Olejník</strong> a všetky projekty na tejto stránke som vytvoril <strong>sám</strong> – od nápadu až po hotovú aplikáciu.</p>
+        <p class="about-lead">Nižšie nájdeš podrobnejší popis každého z nich.</p>
+      </div>
+
+      <h2 class="section-title">Projekty podrobnejšie</h2>
+
+      <div class="detail-list">
+
+        <!-- FlightRadar -->
+        <article class="detail" id="flightradar" style="--icon-color: #6366f1;">
+          <div class="card-icon" style="--icon-color: #6366f1; --icon-bg: #eef2ff;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+            </svg>
+          </div>
+          <div>
+            <h3>FlightRadar</h3>
+            <span class="detail-tag">Letecké dáta</span>
+            <p>Webová aplikácia, ktorá zobrazuje aktuálne letové údaje v reálnom čase. Je určená pre každého, koho zaujíma, čo sa práve deje na oblohe.</p>
+            <div class="detail-links">
+              <a class="card-link" href="https://flightradar8.pages.dev" target="_blank" rel="noopener">Otvoriť projekt →</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Olej Sport -->
+        <article class="detail" id="olej-sport" style="--icon-color: #10b981;">
+          <div class="card-icon" style="--icon-color: #10b981; --icon-bg: #ecfdf5;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Olej Sport</h3>
+            <span class="detail-tag">Šport a výživa</span>
+            <p>Informačná stránka o športových nápojoch a ich výhodách. Zhrnuje, čo také nápoje ponúkajú a prečo môžu pomôcť pri športe.</p>
+            <div class="detail-links">
+              <a class="card-link" href="https://olejsport.pages.dev" target="_blank" rel="noopener">Otvoriť projekt →</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Kde Lacnejšie -->
+        <article class="detail" id="kde-lacnejsie" style="--icon-color: #f59e0b;">
+          <div class="card-icon" style="--icon-color: #f59e0b; --icon-bg: #fffbeb;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Kde Lacnejšie</h3>
+            <span class="detail-tag">Porovnávač cien</span>
+            <p>Aplikácia „Porovnaj to", v ktorej porovnáš ceny a nájdeš najlepšiu ponuku, aby si pri nákupe nepreplácal.</p>
+            <div class="detail-links">
+              <a class="card-link" href="https://porovnajto.pages.dev" target="_blank" rel="noopener">Otvoriť projekt →</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Hex-Pulse -->
+        <article class="detail" id="hex-pulse" style="--icon-color: #ec4899;">
+          <div class="card-icon" style="--icon-color: #ec4899; --icon-bg: #fdf2f8;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Hex‑Pulse</h3>
+            <span class="detail-tag">Bezpečnosť</span>
+            <p>Zabezpečený systém na správu hesiel, dokumentov a prístupov. Beží hlavne ako desktopový program pre Windows, s iOS aplikáciou ako sprievodcom.</p>
+            <ul>
+              <li>Heslá a dokumenty šifruje pomocou <strong>AES‑256‑GCM</strong>.</li>
+              <li>Prístupovou bránou sú <strong>TOTP kódy</strong> z telefónu.</li>
+              <li>Databázu a koreňový kľúč chráni <strong>Shamirovo zdieľanie tajomstva</strong>.</li>
+              <li>Prístup riadi hierarchia rolí <strong>Admin, Manager a User</strong>.</li>
+              <li>Funguje offline – bez internetu a licenčného servera, dáta neopustia zariadenie bez exportu.</li>
+              <li>Auditný denník s hashmi zaznamenáva zmeny, takže zásah do histórie sa dá odhaliť.</li>
+            </ul>
+            <div class="detail-links">
+              <a class="card-link" href="https://hexpulse.pages.dev" target="_blank" rel="noopener">Otvoriť projekt →</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Jutube -->
+        <article class="detail" id="jutube" style="--icon-color: #ef4444;">
+          <div class="card-icon" style="--icon-color: #ef4444; --icon-bg: #fef2f2;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+              <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Jutube</h3>
+            <span class="detail-tag">Userscript do prehliadača</span>
+            <p>Skript pre Tampermonkey alebo Violentmonkey, ktorý na adrese <strong>youtube.com/robots.txt</strong> otvorí vlastnú stránku s vyhľadávaním a vlastným prehrávačom videí bez reklám.</p>
+            <ul>
+              <li>Vyhľadávanie videí, playlistov a Shorts.</li>
+              <li>Odkazy <strong>youtube.com/jwatch?v=…</strong> a <strong>/jshorts/…</strong> otvoria video priamo v Jutube.</li>
+              <li>Voliteľné automatické presmerovanie bežných odkazov na YouTube.</li>
+              <li>Inštaluje sa jedným kliknutím, návod je na hlavnej stránke pri karte Jutube.</li>
+            </ul>
+            <div class="detail-links">
+              <a class="card-link" href="index.html#projekty">Návod na inštaláciu →</a>
+              <a class="card-link" href="https://github.com/sewoofnk/JUTUBE" target="_blank" rel="noopener">Zdrojový kód na GitHube →</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Ignition Plane -->
+        <article class="detail" id="ignition-plane" style="--icon-color: #f97316;">
+          <div class="card-icon" style="--icon-color: #f97316; --icon-bg: #fff7ed;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Ignition Plane</h3>
+            <span class="detail-tag">Letecký poradca</span>
+            <p>Pomocník pre pilotov a leteckých nadšencov, ktorý používaš vedľa simulátora <strong>Microsoft Flight Simulator 2024</strong>.</p>
+            <ul>
+              <li>Krokové postupy od štartu z cold &amp; dark až po vypnutie lietadla.</li>
+              <li>Výber lietadla: Airbus A320neo, Boeing 737 MAX 8, Airbus A350‑900, Boeing 747‑8, Boeing 787‑9 a Boeing 777‑300ER od PMDG.</li>
+              <li>Odkazy na nástroje, glosár, kabíny a vyhľadávanie.</li>
+              <li>Nie je určený na reálne letectvo, len na simuláciu.</li>
+            </ul>
+            <div class="detail-links">
+              <a class="card-link" href="https://ignition8.pages.dev/" target="_blank" rel="noopener">Otvoriť projekt →</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Cloudy -->
+        <article class="detail" id="cloudy" style="--icon-color: #06b6d4;">
+          <div class="card-icon" style="--icon-color: #06b6d4; --icon-bg: #ecfeff;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Cloudy</h3>
+            <span class="detail-tag">Počasie</span>
+            <p>Synoptická predpoveď počasia (Synoptik) s mapou, ktorá zobrazuje teploty a izobary v reálnom čase.</p>
+            <div class="detail-links">
+              <a class="card-link" href="https://cloudy8.pages.dev/#m=icon_eu&r=latest&l=temperature&lv=sfc&o=isobars&v=19.60,48.70,5.40" target="_blank" rel="noopener">Otvoriť projekt →</a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="about-cta">
+        <a class="btn btn-primary" href="index.html#kontakt">Napíš mi</a>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <span>© 2026 molej.dev · by Olejník Matúš</span>
+      <span>Všetky práva vyhradené</span>
+    </div>
+  </footer>
+
+</body>
+</html>
