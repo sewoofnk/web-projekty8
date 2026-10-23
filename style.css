@@ -311,6 +311,67 @@ button:focus-visible {
   margin-bottom: 1.25rem;
 }
 
+/* About section */
+.about {
+  flex: 1;
+  padding-bottom: 5rem;
+}
+
+.about-box {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: clamp(1.4rem, 4vw, 2.25rem);
+  max-width: 820px;
+}
+
+.about-lead {
+  font-size: clamp(1rem, 2.4vw, 1.15rem);
+  line-height: 1.65;
+}
+
+.about-lead strong,
+.about-list strong {
+  color: var(--clr-text);
+  font-weight: 700;
+}
+
+.about-list {
+  list-style: none;
+  margin: 1.4rem 0;
+  display: grid;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+  color: var(--clr-muted);
+}
+
+.about-list li {
+  position: relative;
+  padding-left: 1.3rem;
+}
+
+.about-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--clr-accent-2);
+}
+
+.about-note {
+  font-size: 0.9rem;
+  color: var(--clr-muted);
+}
+
+.about-note a {
+  color: var(--clr-accent-2);
+  font-weight: 600;
+}
+
 /* Touch devices: no sticky hover, instead a quick press effect */
 @media (hover: none) {
   .card:hover {
@@ -419,8 +480,7 @@ a.card,
    Cards Grid
    ================================================ */
 main {
-  flex: 1;
-  padding-bottom: 5rem;
+  padding-bottom: 3.5rem;
 }
 
 .cards-grid {
