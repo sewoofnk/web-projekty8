@@ -226,7 +226,7 @@
     class="download-btn"
     onclick="downloadJutube()"
   >
-    Stiahnuť jutube.user.js
+    Poslať odkaz na stiahnutie
   </button>
 
   <p id="download-message"></p>
@@ -257,14 +257,22 @@ async function downloadJutube() {
     });
     if (!res.ok) throw new Error("signup");
 
-    const link = document.createElement("a");
-    link.href = "downloads/jutube.user.js";
-    link.download = "jutube.user.js";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    const mail = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        service_id: "service_tkr1t99",
+        template_id: "template_9mmw0th",
+        user_id: "z7lanO8JpI0hW5v_c",
+        template_params: {
+          email,
+          link: new URL("downloads/jutube.user.js", location.href).href
+        }
+      })
+    });
+    if (!mail.ok) throw new Error("mail");
 
-    message.textContent = "Ďakujeme! Sťahovanie bolo spustené.";
+    message.textContent = "Odkaz na stiahnutie sme poslali na " + email + ". Ak ho nevidíš, pozri aj do spamu.";
   } catch (error) {
     message.textContent = "Chyba pri odosielaní. Skús znova.";
   }
