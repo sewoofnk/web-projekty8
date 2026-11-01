@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.12.0
+// @version      2.12.1
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -107,7 +107,7 @@
   const META = `// ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.12.0
+// @version      2.12.1
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -2280,6 +2280,7 @@
   }
 
   // ================= nastavenia =================
+  const SIGNUPS_URL = 'https://portfolio8.pages.dev/api/signups';
   function renderSettings(app) {
     document.title = 'Nastavenia – JUTUBE';
     document.getElementById('q').value = '';
@@ -2313,6 +2314,9 @@
       ${chk('trackHistory', data.trackHistory !== false, 'Učiť YouTube odporúčania', 'Po prihlásení zapíše pozreté videá do tvojej YouTube histórie, aby sa zlepšovali odporúčania')}
       ${chk('notifyOn', !data.notifyOff, 'Upozornenia na nové videá (🔔)', 'Z tvojich odberov alebo obľúbených kanálov, kontrola každých 20 minút')}
       ${chk('sysNotify', !!data.sysNotify, 'Systémové upozornenia', 'Okno v rohu obrazovky, aj keď si v inej karte (kým je JUTUBE otvorené)')}
+      <div class="set-row" style="cursor:default;flex-direction:column;align-items:stretch"><span><b>📧 E-maily zo sťahovania (správca)</b><br><span class="mt">Adresy, ktoré ľudia zadali pri sťahovaní skriptu na webe. Zobrazia sa po zadaní správcovského kľúča.</span></span>
+        <span class="acts" style="margin-top:8px"><input type="password" id="adm-key" placeholder="Správcovský kľúč" value="${esc(data.adminKey || '')}" style="flex:1;min-width:0"><button class="pill" id="adm-load">Načítať</button></span>
+        <div id="adm-list" class="note"></div></div>
       <h2>Odkazy z YouTube</h2>
       ${chk('autoRedirect', !!data.autoRedirect, 'Automaticky otvárať YouTube videá v JUTUBE', 'Pôvodný YouTube si vynútiš pridaním &amp;jt=0 do adresy')}
       ${chk('ytAdBlock', data.ytAdBlock !== false, 'Blokovať reklamy aj na pôvodnom YouTube', 'Na stránkach youtube.com/watch (napr. „Otvoriť na YouTube“) odstráni reklamy z prehrávača YouTube')}
@@ -2324,6 +2328,24 @@
       <h2>O aplikácii</h2>
       <div class="set-row"><span><b>JUTUBE ${esc(META.match(/@version\s+(\S+)/)?.[1] || '')}</b><br><span class="mt">by Olejnik</span></span><span class="acts"><a class="pill" href="#diag">Diagnostika účtu</a><a class="pill" href="#help">Návod na mobil</a></span></div>
     </div>`);
+    document.getElementById('adm-load').onclick = async () => {
+      const key = document.getElementById('adm-key').value.trim();
+      const out = document.getElementById('adm-list');
+      if (!key) { out.textContent = 'Zadaj správcovský kľúč.'; return; }
+      out.textContent = 'Načítavam…';
+      try {
+        const r = await fetch(`${SIGNUPS_URL}?key=${encodeURIComponent(key)}`);
+        const j = await r.json();
+        if (!Array.isArray(j.emails)) throw new Error(j.error || 'Zlý kľúč');
+        data.adminKey = key;
+        save();
+        out.innerHTML = j.emails.length
+          ? `<b>${j.emails.length} adries</b><br>${j.emails.map((e) => `${esc(e.email)}${e.date ? ` <span class="mt">· ${esc(String(e.date).slice(0, 16).replace('T', ' '))}</span>` : ''}`).join('<br>')}`
+          : 'Zatiaľ nikto nič nezadal.';
+      } catch (e) {
+        out.textContent = `Nepodarilo sa načítať (${e.message}).`;
+      }
+    };
     document.getElementById('set-install')?.addEventListener('click', installApp);
     document.getElementById('mode-seg').onclick = (e) => {
       const b = e.target.closest('[data-mode]');
@@ -3172,6 +3194,8 @@
       this.onTick = () => this.pump();
       v.addEventListener('timeupdate', this.onTick);
       this.timer = setInterval(() => this.pump(), 400);
+      this.onOnline = () => { if (this.stopped && this.ready && !this.dead) this.resume(); };
+      window.addEventListener('online', this.onOnline);
     }
     async get(track, start, end) {
       // sťahuje po kúskoch; výpadky siete skúša znova, pri vypršaní odkazov si vypýta nové
@@ -3196,7 +3220,7 @@
           if (e.name === 'AbortError' || signal.aborted) throw e;
           if (attempt >= delays.length) throw e;
           // 403 = odkaz vypršal → nové odkazy (najviac raz za minútu)
-          if (e.status === 403 && Date.now() - (this.refreshedAt || 0) > 60e3) {
+          if ((e.status === 403 || e.status === 410 || attempt >= 2) && Date.now() - (this.refreshedAt || 0) > 15e3) {
             this.refreshedAt = Date.now();
             await this.refresh().catch(() => {});
           }
@@ -3276,6 +3300,22 @@
     }
     fail(e) {
       if (this.dead || this.stopped) return;
+      // najprv sa potichu zotav sám (nové odkazy, pokračovanie sťahovania) – bez zásahu používateľa
+      const now = Date.now();
+      if (now - (this.autoAt || 0) > 60e3) this.autoTries = 0;
+      if (this.autoTries < 5) {
+        this.autoTries++;
+        this.autoAt = now;
+        this.gen++;
+        this.ac.abort();
+        this.ac = new AbortController();
+        for (const tr of this.tracks || []) tr.busy = false;
+        this.refreshedAt = now;
+        this.refresh().catch(() => {}).finally(() => {
+          setTimeout(() => { if (!this.dead && !this.stopped) this.pump(); }, 1000 * this.autoTries);
+        });
+        return;
+      }
       // ani opakovanie nepomohlo – zastav sťahovanie a ponúkni „Skúsiť znova“
       this.stopped = true;
       clearInterval(this.timer);
@@ -3309,6 +3349,7 @@
       this.ac.abort();
       this.v.removeEventListener('seeking', this.onSeek);
       this.v.removeEventListener('timeupdate', this.onTick);
+      window.removeEventListener('online', this.onOnline);
       try { URL.revokeObjectURL(this.v.src); } catch {}
     }
   }
