@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.12.1
+// @version      2.13.0
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -107,7 +107,7 @@
   const META = `// ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.12.1
+// @version      2.13.0
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -916,6 +916,25 @@
   .music-head h1{margin:0;font-size:26px}
   .music-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .music-bar h2{margin:20px 0 12px}
+  .lib h1{margin:0;font-size:26px}
+  .lib-player{margin:16px 0;padding:14px;border-radius:16px;background:var(--bg2);border:1px solid var(--line)}
+  .lib-player video{width:100%;max-height:60vh;border-radius:12px;background:#000;display:block}
+  .lib-player audio{width:100%;display:block;margin-top:10px}
+  .lib-cover{width:100%;max-width:320px;aspect-ratio:1;margin:0 auto;border-radius:14px;background:var(--grad);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .lib-cover img{width:100%;height:100%;object-fit:cover}
+  .lib-cover svg{width:80px;height:80px;fill:#fff;opacity:.9}
+  .lib-now{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+  .lib-now b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lib-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+  .lib-row{display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;cursor:pointer}
+  .lib-row:hover,.lib-row.on{background:var(--hover)}
+  .lib-th{flex:none;width:96px;aspect-ratio:16/9;border-radius:8px;background:var(--soft);overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .lib-th img{width:100%;height:100%;object-fit:cover}
+  .lib-th svg{width:28px;height:28px;fill:var(--text2)}
+  .lib-t{flex:1;min-width:0}
+  .lib-t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lib-act{flex:none;display:flex;gap:6px}
+  .lib-act button{padding:6px 10px}
   .aadd{top:44px}
   .unavail{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:440px;padding:18px 20px;border-radius:14px;background:rgba(10,12,36,.88);pointer-events:auto;line-height:1.5}
   .unavail .acts{justify-content:center}
@@ -1818,11 +1837,12 @@
     const app = document.getElementById('app');
     const feed = h.get('feed');
     if (!h.has('shorts')) stopShorts();
+    if (!h.has('downloads')) libStop();
     // na stránke videa skry bočný panel (ako YouTube); ☰ ho vtedy ukáže cez obsah
     document.body.classList.toggle('watching', !!h.get('v'));
     document.body.classList.remove('side-open');
     closeCardMenu();
-    renderNav(h.has('shorts') ? 'shorts' : h.has('music') ? 'music' : h.has('me') ? 'me' : h.has('settings') || h.has('stats') ? 'settings' : h.get('album') ? 'playlists' : h.get('v') || h.get('q') || h.get('c') || h.get('list') || h.has('help') ? '' : feed || 'home');
+    renderNav(h.has('shorts') ? 'shorts' : h.has('music') ? 'music' : h.has('me') ? 'me' : h.has('settings') || h.has('stats') ? 'settings' : h.has('downloads') ? 'downloads' : h.get('album') ? 'playlists' : h.get('v') || h.get('q') || h.get('c') || h.get('list') || h.has('help') ? '' : feed || 'home');
     if (h.get('v')) return renderWatch(app, h.get('v'), t);
     // odchod zo stránky videa: bežiace video sa presunie do mini prehrávača v rohu
     if (onWatch && player && current && video && !video.ended && !video.paused) dock();
@@ -1839,6 +1859,7 @@
     if (h.get('album')) return renderAlbum(app, h.get('album'));
     if (h.has('settings')) return renderSettings(app);
     if (h.has('stats')) return renderStats(app);
+    if (h.has('downloads')) return renderDownloads(app);
     if (h.has('me')) return renderMe(app);
     if (h.get('list')) return renderPlaylist(app, h.get('list'), t);
     if (feed === 'playlists') return renderMyPlaylists(app, t);
@@ -1884,6 +1905,7 @@
     list: '<svg viewBox="0 0 24 24"><path d="M3 6h12v2H3zm0 5h12v2H3zm0 5h8v2H3zm14-1v-4h2v4h4v2h-4v4h-2v-4h-4v-2z"/></svg>',
     later: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>',
     liked: '<svg viewBox="0 0 24 24"><path d="M2 21h4V9H2v12zm20-11a2 2 0 0 0-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L13.2 1 6.6 7.6C6.2 8 6 8.5 6 9v10a2 2 0 0 0 2 2h9c.8 0 1.5-.5 1.8-1.2l3-7.1c.1-.2.2-.5.2-.7v-2z"/></svg>',
+    download: '<svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>',
     subs: '<svg viewBox="0 0 24 24"><path d="M20 7H4V6h16v1zm2 2v12H2V9h20zm-7 6-5-3v6l5-3zM17 3H7v1h10V3z"/></svg>',
     settings: '<svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5A3.5 3.5 0 1 1 16.5 12 3.5 3.5 0 0 1 13 15.5z" transform="translate(-1 0)"/></svg>',
   };
@@ -1929,6 +1951,7 @@
       ${item('playlists', '#feed=playlists', SN_ICONS.list, 'Zoznamy')}
       ${item('later', '#feed=later', SN_ICONS.later, 'Pozrieť neskôr')}
       ${item('liked', '#feed=liked', SN_ICONS.liked, 'Obľúbené videá')}
+      ${item('downloads', '#downloads', SN_ICONS.download, 'Stiahnuté')}
       <div class="sn-sep"></div>
       ${item('settings', '#settings', SN_ICONS.settings, 'Nastavenia')}
       <p class="sn-foot">JUTUBE by Olejnik</p>`);
@@ -1939,7 +1962,7 @@
     });
     // spodná lišta na mobile (ako YouTube appka): Domov, Shorts, Hudba (v strede), Odbery, Moje
     const tab = (key, href, icon, label) => `<a class="tb${a === key ? ' on' : ''}" href="${href}">${icon}<span>${label}</span></a>`;
-    const me = ['me', 'history', 'playlists', 'later', 'liked', 'settings'].includes(a) ? 'me' : a;
+    const me = ['me', 'history', 'playlists', 'later', 'liked', 'downloads', 'settings'].includes(a) ? 'me' : a;
     setHTML(document.getElementById('tabbar'), `
       ${tab('home', '#', SN_ICONS.home, 'Domov')}
       ${tab('shorts', '#shorts', SN_ICONS.shorts, 'Shorts')}
@@ -1968,6 +1991,7 @@
         ${row('#feed=playlists', SN_ICONS.list, 'Zoznamy a albumy', `${plural(data.albums.length, 'album', 'albumy', 'albumov')}${loggedIn() ? ' + playlisty z YouTube' : ''}`)}
         ${row('#feed=later', SN_ICONS.later, 'Pozrieť neskôr', '')}
         ${row('#feed=liked', SN_ICONS.liked, 'Obľúbené videá', '')}
+        ${row('#downloads', SN_ICONS.download, 'Stiahnuté', 'MP3 a videá na prehrávanie bez internetu')}
         ${row('#stats', SN_ICONS.history, 'Štatistiky', 'Čas pozerania, top kanály a hudba')}
         ${row('#settings', SN_ICONS.settings, 'Nastavenia', 'Vzhľad, kvalita, upozornenia…')}
         ${row('#help', SN_ICONS.list, 'Návod na inštaláciu', 'iPhone, iPad, Android')}
@@ -2309,6 +2333,7 @@
       ${chk('audioOnly', !!data.audioOnly, 'Len zvuk', 'Sťahuje iba zvuk – šetrí dáta pri hudbe a podcastoch')}
       ${chk('bgPlay', data.bgPlay !== false, 'Prehrávať na pozadí', 'Video hrá ďalej aj pri zamknutej obrazovke alebo v inej appke – ovládanie nájdeš na zamknutej obrazovke')}
       ${chk('stableVol', !!data.stableVol, 'Stabilná hlasitosť', 'Vyrovná tiché a hlasné pasáže')}
+      ${chk('dlLibrary', data.dlLibrary !== false, 'Stiahnuté ukladať aj do aplikácie', 'Súbory sa objavia v sekcii Stiahnuté a dajú sa prehrať bez internetu (zaberajú miesto v prehliadači)')}
       ${chk('shortsMuted', !!data.shortsMuted, 'Shorts bez zvuku', 'Shorts sa spustia stlmené')}
       <h2>Účet a upozornenia</h2>
       ${chk('trackHistory', data.trackHistory !== false, 'Učiť YouTube odporúčania', 'Po prihlásení zapíše pozreté videá do tvojej YouTube histórie, aby sa zlepšovali odporúčania')}
@@ -3500,12 +3525,16 @@
     try {
       if (audioOnly) {
         const a = await fetchWhole(s, { ...s.audio }, onBytes, ac.signal);
-        saveBlob(new Blob([a], { type: 'audio/mp4' }), fileName(s.details.title, '.m4a'));
+        const blob = new Blob([a], { type: 'audio/mp4' });
+        saveBlob(blob, fileName(s.details.title, '.m4a'));
+        await libAdd(s, 'm4a', blob);
       } else {
         const [v, a] = await Promise.all([fetchWhole(s, { ...vf }, onBytes, ac.signal), fetchWhole(s, { ...s.audio }, onBytes, ac.signal)]);
         bar.label('Spájam obraz a zvuk…');
         await sleep(30);
-        saveBlob(muxFmp4(v, a), fileName(s.details.title, `[${qh(vf)}p].mp4`));
+        const blob = muxFmp4(v, a);
+        saveBlob(blob, fileName(s.details.title, `[${qh(vf)}p].mp4`));
+        await libAdd(s, 'mp4', blob);
       }
       bar.done('Stiahnuté ✓');
     } catch (e) {
@@ -3513,6 +3542,236 @@
     } finally {
       downloading = null;
     }
+  }
+
+  // ================= MP3 =================
+  // YouTube dáva zvuk ako AAC (m4a). Stiahne sa, dekóduje cez Web Audio a zakóduje do MP3 (lamejs).
+  const MP3_MAX_SEC = 20 * 60; // dlhšie nahrávky by v pamäti (nekomprimovaný zvuk) nezvládol najmä telefón
+  let lamePromise = null;
+  function loadLame() {
+    if (window.lamejs) return Promise.resolve(window.lamejs);
+    return (lamePromise ||= new Promise((resolve, reject) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js';
+      sc.onload = () => (window.lamejs ? resolve(window.lamejs) : reject(new Error('Kódovanie MP3 sa nenačítalo')));
+      sc.onerror = () => { lamePromise = null; reject(new Error('Nepodarilo sa načítať kódovanie MP3 (si online?)')); };
+      document.head.append(sc);
+    }));
+  }
+
+  async function decodeAudio(bytes) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    let ctx;
+    try { ctx = new AC({ sampleRate: 44100 }); } catch { ctx = new AC(); }
+    try {
+      // kópia: decodeAudioData odpojí pôvodný buffer
+      return await new Promise((resolve, reject) => ctx.decodeAudioData(bytes.slice().buffer, resolve, reject));
+    } finally {
+      ctx.close?.().catch(() => {});
+    }
+  }
+
+  async function encodeMp3(ab, kbps, onProgress, signal) {
+    const lame = await loadLame();
+    const ch = Math.min(2, ab.numberOfChannels);
+    const enc = new lame.Mp3Encoder(ch, ab.sampleRate, kbps);
+    const i16 = (f) => {
+      const o = new Int16Array(f.length);
+      for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); o[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
+      return o;
+    };
+    const c0 = ab.getChannelData(0);
+    const c1 = ch > 1 ? ab.getChannelData(1) : null;
+    const BLOCK = 1152 * 16;
+    const parts = [];
+    for (let i = 0, n = 0; i < c0.length; i += BLOCK, n++) {
+      if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+      const l = i16(c0.subarray(i, i + BLOCK));
+      const out = c1 ? enc.encodeBuffer(l, i16(c1.subarray(i, i + BLOCK))) : enc.encodeBuffer(l);
+      if (out.length) parts.push(out);
+      if (n % 25 === 0) { onProgress(i / c0.length); await sleep(0); }
+    }
+    const end = enc.flush();
+    if (end.length) parts.push(end);
+    return new Blob(parts, { type: 'audio/mpeg' });
+  }
+
+  const fetchWholeAudio = (s, bar, signal) => {
+    const total = +s.audio.contentLength;
+    let got = 0;
+    return fetchWhole(s, { ...s.audio }, (n) => { got += n; bar.set(got / total); }, signal);
+  };
+
+  async function downloadMp3(s) {
+    if (downloading) return toast('Už sa sťahuje iné video – počkaj, kým skončí');
+    if (s.details.length > MP3_MAX_SEC) return toast(`MP3 sa robí z nahrávok do ${MP3_MAX_SEC / 60} minút – pre dlhšie použi „Stiahnuť len zvuk“`);
+    const ac = new AbortController();
+    downloading = ac;
+    const bar = showProgress('Sťahujem zvuk', () => ac.abort());
+    try {
+      const a = await fetchWholeAudio(s, bar, ac.signal);
+      bar.label('Dekódujem zvuk…');
+      await sleep(30);
+      const ab = await decodeAudio(a);
+      bar.label('Vytváram MP3…');
+      const blob = await encodeMp3(ab, 192, (p) => bar.set(p), ac.signal);
+      saveBlob(blob, fileName(s.details.title, '.mp3').replace(/ \.mp3$/, '.mp3'));
+      await libAdd(s, 'mp3', blob);
+      bar.done('MP3 hotové ✓');
+    } catch (e) {
+      bar.done(e.name === 'AbortError' ? 'Sťahovanie zrušené' : `Nepodarilo sa vytvoriť MP3: ${e.message || 'zvuk sa nedá previesť'} – skús „Stiahnuť len zvuk“`);
+    } finally {
+      downloading = null;
+    }
+  }
+
+  // ================= knižnica stiahnutých súborov =================
+  // Súbory (MP3, M4A, MP4) sa ukladajú do IndexedDB v prehliadači / aplikácii a dajú sa prehrať bez internetu.
+  let libDb = null;
+  const libOpen = () => (libDb ||= new Promise((resolve, reject) => {
+    const r = indexedDB.open('jutube-lib', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('files', { keyPath: 'id' });
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => { libDb = null; reject(r.error); };
+  }));
+  const libReq = async (mode, fn) => {
+    const db = await libOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('files', mode);
+      const req = fn(tx.objectStore('files'));
+      tx.oncomplete = () => resolve(req?.result);
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    });
+  };
+  const libAll = async () => (await libReq('readonly', (st) => st.getAll())).sort((a, b) => b.date - a.date);
+  const libPut = (item) => libReq('readwrite', (st) => st.put(item));
+  const libDel = (id) => libReq('readwrite', (st) => st.delete(id));
+  const libId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  // po stiahnutí: uloží súbor aj do knižnice (ak to používateľ nevypol)
+  async function libAdd(s, kind, blob) {
+    if (data.dlLibrary === false) return;
+    try {
+      await libPut({ id: libId(), vid: s.details.id, title: s.details.title, channel: s.details.channel, kind, size: blob.size, date: Date.now(), blob });
+      toast('Uložené aj v sekcii Stiahnuté');
+    } catch {
+      toast('Do aplikácie sa súbor nepodarilo uložiť (málo miesta?)');
+    }
+  }
+
+  const LIB_MIME = { mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'video/mp4' };
+  const fmtSize = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1024))} kB`);
+
+  let lib = null; // { items, idx, el, url } – prehrávač na stránke Stiahnuté
+  function libStop() {
+    if (!lib) return;
+    try { lib.el?.pause(); } catch {}
+    try { if (lib.url) URL.revokeObjectURL(lib.url); } catch {}
+    lib = null;
+  }
+
+  async function libShare(it) {
+    const name = `${fileName(it.title, '').trim()}.${it.kind}`;
+    const file = new File([it.blob], name, { type: it.blob.type || LIB_MIME[it.kind] || '' });
+    if (navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    saveBlob(it.blob, name);
+  }
+
+  async function renderDownloads(app) {
+    document.title = 'Stiahnuté – JUTUBE';
+    document.getElementById('q').value = '';
+    let items = [];
+    try { items = await libAll(); } catch {}
+    const state = (lib = { items, idx: -1, el: null, url: null });
+    setHTML(app, `<div class="lib">
+      <div class="music-bar"><h1>⬇ Stiahnuté</h1><button class="pill pill-w" id="lib-add">＋ Pridať súbory</button></div>
+      <input type="file" id="lib-file" multiple hidden accept="audio/*,video/*,.mp3,.m4a,.mp4,.m4v,.mov">
+      <div class="lib-player" id="lib-player" hidden></div>
+      <div class="lib-list" id="lib-list"></div>
+      <p class="mt" id="lib-info"></p>
+    </div>`);
+    const list = document.getElementById('lib-list');
+    const box = document.getElementById('lib-player');
+    const kindIcon = (k) => (k === 'mp4' ? SN_ICONS.shorts : SN_ICONS.music);
+
+    const paint = () => {
+      document.getElementById('lib-info').textContent = state.items.length
+        ? `${plural(state.items.length, 'súbor', 'súbory', 'súborov')} · ${fmtSize(state.items.reduce((n, x) => n + x.size, 0))}`
+        : '';
+      setHTML(list, state.items.length ? state.items.map((it, i) => `<div class="lib-row${i === state.idx ? ' on' : ''}" data-i="${i}">
+          <span class="lib-th">${it.vid ? `<img src="${thumb(esc(it.vid))}" alt="" loading="lazy">` : kindIcon(it.kind)}</span>
+          <span class="lib-t"><b>${esc(it.title)}</b><span class="mt">${it.kind.toUpperCase()} · ${fmtSize(it.size)}${it.channel ? ` · ${esc(it.channel)}` : ''}</span></span>
+          <span class="lib-act"><button class="pill" data-share="${i}" title="Uložiť do Súborov / zdieľať">⬆</button><button class="pill" data-del="${i}" title="Zmazať">🗑</button></span>
+        </div>`).join('')
+        : '<div class="empty">Zatiaľ tu nič nie je.<br>Súbory sa sem ukladajú po sťahovaní (⋯ → Stiahnuť ako MP3 / video), alebo ich pridaj tlačidlom ＋ Pridať súbory.</div>');
+    };
+
+    const play = (i) => {
+      if (state !== lib || !state.items[i]) return;
+      const it = state.items[i];
+      try { state.el?.pause(); } catch {}
+      if (state.url) URL.revokeObjectURL(state.url);
+      state.idx = i;
+      state.url = URL.createObjectURL(it.blob);
+      video?.pause(); // hlavný prehrávač nech nehrá súbežne
+      const tag = it.kind === 'mp4' ? 'video' : 'audio';
+      setHTML(box, `${tag === 'video' ? '' : `<div class="lib-cover">${it.vid ? `<img src="https://i.ytimg.com/vi/${esc(it.vid)}/hqdefault.jpg" alt="">` : SN_ICONS.music}</div>`}
+        <${tag} id="lib-el" controls playsinline autoplay></${tag}>
+        <div class="lib-now"><b>${esc(it.title)}</b><span class="lib-act"><button class="pill" id="lib-prev" title="Predchádzajúce">⏮</button><button class="pill" id="lib-next" title="Ďalšie">⏭</button></span></div>`);
+      box.hidden = false;
+      const el = document.getElementById('lib-el');
+      state.el = el;
+      el.src = state.url;
+      el.play().catch(() => {});
+      el.onended = () => { if (state.idx < state.items.length - 1) play(state.idx + 1); };
+      document.getElementById('lib-prev').onclick = () => play(state.idx > 0 ? state.idx - 1 : state.items.length - 1);
+      document.getElementById('lib-next').onclick = () => play(state.idx < state.items.length - 1 ? state.idx + 1 : 0);
+      if (navigator.mediaSession) {
+        const art = it.vid ? [{ src: `https://i.ytimg.com/vi/${it.vid}/hqdefault.jpg`, sizes: '480x360', type: 'image/jpeg' }] : [];
+        navigator.mediaSession.metadata = new MediaMetadata({ title: it.title, artist: it.channel || '', album: 'JUTUBE', artwork: art });
+        navigator.mediaSession.setActionHandler('previoustrack', () => document.getElementById('lib-prev')?.click());
+        navigator.mediaSession.setActionHandler('nexttrack', () => document.getElementById('lib-next')?.click());
+      }
+      paint();
+      box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    };
+
+    list.onclick = async (e) => {
+      const sh = e.target.closest('[data-share]');
+      const dl = e.target.closest('[data-del]');
+      if (sh) return libShare(state.items[+sh.dataset.share]);
+      if (dl) {
+        const i = +dl.dataset.del;
+        const it = state.items[i];
+        if (!confirm(`Zmazať „${it.title}“?`)) return;
+        await libDel(it.id).catch(() => {});
+        if (i === state.idx) { try { state.el?.pause(); } catch {} box.hidden = true; state.idx = -1; }
+        else if (i < state.idx) state.idx--;
+        state.items.splice(i, 1);
+        return paint();
+      }
+      const row = e.target.closest('.lib-row');
+      if (row) play(+row.dataset.i);
+    };
+
+    document.getElementById('lib-add').onclick = () => document.getElementById('lib-file').click();
+    document.getElementById('lib-file').onchange = async (e) => {
+      const files = [...e.target.files];
+      e.target.value = '';
+      let ok = 0;
+      for (const f of files) {
+        const ext = (f.name.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+        const kind = f.type.startsWith('video/') || ['mp4', 'm4v', 'mov'].includes(ext) ? 'mp4' : ext === 'm4a' ? 'm4a' : 'mp3';
+        const it = { id: libId(), vid: '', title: f.name.replace(/\.[^.]+$/, ''), channel: '', kind, size: f.size, date: Date.now(), blob: f };
+        try { await libPut(it); if (state === lib) state.items.unshift(it); ok++; } catch {}
+      }
+      if (state === lib) { state.idx = -1; box.hidden = true; try { state.el?.pause(); } catch {} paint(); }
+      toast(ok ? `Pridané: ${ok}` : 'Súbory sa nepodarilo pridať');
+    };
+
+    paint();
   }
 
   function showProgress(label, onCancel) {
@@ -3546,7 +3805,8 @@
         ${pipSupported() ? '<button class="pill" id="m-pip">⧉ Obraz v obraze</button>' : ''}
         ${airplaySupported() ? '<button class="pill" id="m-air">📺 AirPlay (Apple TV)</button>' : ''}
         <button class="pill" id="dl-v">⬇ Stiahnuť video (${qh(vf)}p · ${mb(+vf.contentLength + +s.audio.contentLength)})</button>
-        <button class="pill" id="dl-a">⬇ Stiahnuť len zvuk (${mb(+s.audio.contentLength)})</button>`);
+        <button class="pill" id="dl-a">⬇ Stiahnuť len zvuk (${mb(+s.audio.contentLength)})</button>
+        <button class="pill" id="dl-m">⬇ Stiahnuť ako MP3</button>`);
       menu.hidden = !menu.hidden;
       document.getElementById('m-premium').onclick = () => { menu.hidden = true; openPremium(); };
       document.getElementById('m-audio').onclick = () => { menu.hidden = true; setAudioOnly(!player?.audioOnly); };
@@ -3556,6 +3816,7 @@
       if (airBtn) airBtn.onclick = () => { menu.hidden = true; castNow(); };
       document.getElementById('dl-v').onclick = () => { menu.hidden = true; downloadVideo(s, vf, false); };
       document.getElementById('dl-a').onclick = () => { menu.hidden = true; downloadVideo(s, vf, true); };
+      document.getElementById('dl-m').onclick = () => { menu.hidden = true; downloadMp3(s); };
     };
     document.addEventListener('click', () => { menu.hidden = true; });
   }
