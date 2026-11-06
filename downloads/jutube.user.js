@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.13.0
+// @version      2.13.1
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -107,7 +107,7 @@
   const META = `// ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.13.0
+// @version      2.13.1
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -1937,7 +1937,7 @@
     const shown = sideExpanded ? chans : chans.slice(0, 7);
     setHTML(el, `
       ${item('home', '#', SN_ICONS.home, 'Domov')}
-      ${item('shorts', '#shorts', SN_ICONS.shorts, 'Shorts')}
+      ${item('downloads', '#downloads', SN_ICONS.download, 'Stiahnuté')}
       ${item('music', '#music', SN_ICONS.music, 'Hudba')}
       <div class="sn-sep"></div>
       <a class="sn-h${a === 'subs' ? ' on' : ''}" href="#feed=subs">Odbery ›</a>
@@ -1951,7 +1951,6 @@
       ${item('playlists', '#feed=playlists', SN_ICONS.list, 'Zoznamy')}
       ${item('later', '#feed=later', SN_ICONS.later, 'Pozrieť neskôr')}
       ${item('liked', '#feed=liked', SN_ICONS.liked, 'Obľúbené videá')}
-      ${item('downloads', '#downloads', SN_ICONS.download, 'Stiahnuté')}
       <div class="sn-sep"></div>
       ${item('settings', '#settings', SN_ICONS.settings, 'Nastavenia')}
       <p class="sn-foot">JUTUBE by Olejnik</p>`);
@@ -1962,10 +1961,10 @@
     });
     // spodná lišta na mobile (ako YouTube appka): Domov, Shorts, Hudba (v strede), Odbery, Moje
     const tab = (key, href, icon, label) => `<a class="tb${a === key ? ' on' : ''}" href="${href}">${icon}<span>${label}</span></a>`;
-    const me = ['me', 'history', 'playlists', 'later', 'liked', 'downloads', 'settings'].includes(a) ? 'me' : a;
+    const me = ['me', 'shorts', 'history', 'playlists', 'later', 'liked', 'settings'].includes(a) ? 'me' : a;
     setHTML(document.getElementById('tabbar'), `
       ${tab('home', '#', SN_ICONS.home, 'Domov')}
-      ${tab('shorts', '#shorts', SN_ICONS.shorts, 'Shorts')}
+      ${tab('downloads', '#downloads', SN_ICONS.download, 'Stiahnuté')}
       <a class="tb tb-mid${a === 'music' ? ' on' : ''}" href="#music" aria-label="Hudba"><span class="tb-c">${SN_ICONS.music}</span></a>
       ${tab('subs', '#feed=subs', SN_ICONS.subs, 'Odbery')}
       <a class="tb${me === 'me' ? ' on' : ''}" href="#me"><span class="tb-me">${accountPhoto ? `<img src="${esc(accountPhoto)}" alt="">` : '👤'}</span><span>Moje</span></a>`);
@@ -1991,7 +1990,7 @@
         ${row('#feed=playlists', SN_ICONS.list, 'Zoznamy a albumy', `${plural(data.albums.length, 'album', 'albumy', 'albumov')}${loggedIn() ? ' + playlisty z YouTube' : ''}`)}
         ${row('#feed=later', SN_ICONS.later, 'Pozrieť neskôr', '')}
         ${row('#feed=liked', SN_ICONS.liked, 'Obľúbené videá', '')}
-        ${row('#downloads', SN_ICONS.download, 'Stiahnuté', 'MP3 a videá na prehrávanie bez internetu')}
+        ${row('#shorts', SN_ICONS.shorts, 'Shorts', 'Krátke videá')}
         ${row('#stats', SN_ICONS.history, 'Štatistiky', 'Čas pozerania, top kanály a hudba')}
         ${row('#settings', SN_ICONS.settings, 'Nastavenia', 'Vzhľad, kvalita, upozornenia…')}
         ${row('#help', SN_ICONS.list, 'Návod na inštaláciu', 'iPhone, iPad, Android')}
