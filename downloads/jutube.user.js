@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.13.2
+// @version      2.14.0
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -107,7 +107,7 @@
   const META = `// ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.13.2
+// @version      2.14.0
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -935,6 +935,12 @@
   .lib-t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .lib-act{flex:none;display:flex;gap:6px}
   .lib-act button{padding:6px 10px}
+  .lib-tabs,.lib-tools,.lib-bulk,.lib-ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+  .lib-ctrl select{max-width:100%}
+  .lib-row input[type=checkbox]{flex:none;width:20px;height:20px}
+  .lib-pop{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+  .lib-pop>div{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:14px;min-width:240px;max-width:92vw;max-height:70vh;overflow:auto}
+  .lib-pop .pill{display:block;width:100%;margin-top:8px;text-align:left}
   .aadd{top:44px}
   .unavail{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:440px;padding:18px 20px;border-radius:14px;background:rgba(10,12,36,.88);pointer-events:auto;line-height:1.5}
   .unavail .acts{justify-content:center}
@@ -1399,7 +1405,7 @@
     document.title = `${a.name} – JUTUBE`;
     setHTML(app, `<div class="plhead">
         <div><div class="mt">Môj album</div><h1>${esc(a.name)}</h1><div class="mt">${songs(a.items.length)}</div></div>
-        <div class="acts">${a.items.length ? '<button class="pill pill-w" id="al-play">▶ Prehrať všetko</button><button class="pill" id="al-shuffle">🔀 Náhodne</button>' : ''}<button class="pill" id="al-rename">✎ Premenovať</button><button class="pill" id="al-delete">🗑 Zmazať album</button></div>
+        <div class="acts">${a.items.length ? '<button class="pill pill-w" id="al-play">▶ Prehrať všetko</button><button class="pill" id="al-shuffle">🔀 Náhodne</button><button class="pill" id="al-mp3" title="Stiahnuť album ako MP3">⬇ MP3</button>' : ''}<button class="pill" id="al-rename">✎ Premenovať</button><button class="pill" id="al-delete">🗑 Zmazať album</button></div>
       </div>
       ${a.items.length
         ? `<div class="grid" id="grid">${a.items.map((v) => card(v).replace('<span class="th">', `<span class="th"><button class="al-rm" data-rm="${esc(v.id)}" title="Odstrániť z albumu" aria-label="Odstrániť z albumu">✕</button>`)).join('')}</div>`
@@ -1410,6 +1416,7 @@
     };
     document.getElementById('al-play')?.addEventListener('click', () => playAll(a.items));
     document.getElementById('al-shuffle')?.addEventListener('click', () => playAll([...a.items].sort(() => Math.random() - 0.5)));
+    document.getElementById('al-mp3')?.addEventListener('click', () => downloadMp3Batch(a.items, a.name));
     document.getElementById('al-rename').onclick = () => {
       const name = prompt('Nový názov albumu:', a.name);
       if (!name?.trim()) return;
@@ -2089,7 +2096,7 @@
       if (!pl.items.length) return setHTML(app, `<div class="empty">${esc(pl.alert || 'Playlist je prázdny alebo sa nedá zobraziť.')}</div>`);
       setHTML(app, `<div class="plhead">
           <div><h1>${esc(pl.title)}</h1><div class="mt">${pl.items.length}${pl.cont ? '+' : ''} videí</div></div>
-          <div class="acts"><button class="pill pill-w" id="pl-play">▶ Prehrať všetko</button><button class="pill" id="pl-shuffle">🔀 Náhodne</button></div>
+          <div class="acts"><button class="pill pill-w" id="pl-play">▶ Prehrať všetko</button><button class="pill" id="pl-shuffle">🔀 Náhodne</button><button class="pill" id="pl-mp3" title="Stiahnuť celý playlist ako MP3">⬇ MP3</button></div>
         </div>
         <div class="grid" id="grid">${pl.items.map((v) => card(v, `#v=${v.id}&list=${pl.id}`)).join('')}</div>`);
       // klik na video v playliste: fronta = tento playlist
@@ -2101,6 +2108,18 @@
         useAsQueue(mixed);
         queue.cont = null; // pri náhodnom poradí nedoťahujeme ďalšie
         location.hash = `#v=${mixed[0].id}&list=${pl.id}`;
+      };
+      document.getElementById('pl-mp3').onclick = async () => {
+        const all = [...pl.items];
+        let c = pl.cont;
+        while (c && all.length < 300) {
+          try {
+            const m = await playlistMore(c);
+            for (const x of m.items) if (!all.some((y) => y.id === x.id)) all.push(x);
+            c = m.cont;
+          } catch { break; }
+        }
+        downloadMp3Batch(all, pl.title);
       };
       let cont = pl.cont;
       infinite(document.getElementById('grid'), t, async () => {
@@ -2333,6 +2352,9 @@
       ${chk('audioOnly', !!data.audioOnly, 'Len zvuk', 'Sťahuje iba zvuk – šetrí dáta pri hudbe a podcastoch')}
       ${chk('bgPlay', data.bgPlay !== false, 'Prehrávať na pozadí', 'Video hrá ďalej aj pri zamknutej obrazovke alebo v inej appke – ovládanie nájdeš na zamknutej obrazovke')}
       ${chk('stableVol', !!data.stableVol, 'Stabilná hlasitosť', 'Vyrovná tiché a hlasné pasáže')}
+      <div class="set-row"><span><b>Ekvalizér</b></span>${sel('eq', Object.entries(EQ_PRESETS).map(([k, [l]]) => [k, l]), data.eq || 'off')}</div>
+      <div class="set-row"><span><b>Zosilnenie hlasitosti</b><br><span class="mt">Nad 100 % môže pri hlasných skladbách skresľovať</span></span>${sel('boost', [[1, 'Normálne'], [1.5, '150 %'], [2, '200 %']], data.boost || 1)}</div>
+      ${chk('sponsorBlock', data.sponsorBlock !== false, 'Preskakovať sponzorské časti', 'Podľa databázy SponsorBlock sa preskočí sponzor, vlastná reklama a výzvy k interakcii (posiela sa len začiatok kódu videa)')}
       ${chk('dlLibrary', data.dlLibrary !== false, 'Stiahnuté ukladať aj do aplikácie', 'Súbory sa objavia v sekcii Stiahnuté a dajú sa prehrať bez internetu (zaberajú miesto v prehliadači)')}
       ${chk('shortsMuted', !!data.shortsMuted, 'Shorts bez zvuku', 'Shorts sa spustia stlmené')}
       <h2>Účet a upozornenia</h2>
@@ -2347,6 +2369,10 @@
       ${chk('ytAdBlock', data.ytAdBlock !== false, 'Blokovať reklamy aj na pôvodnom YouTube', 'Na stránkach youtube.com/watch (napr. „Otvoriť na YouTube“) odstráni reklamy z prehrávača YouTube')}
       <h2>Štatistiky</h2>
       <a class="set-row" href="#stats"><span><b>📊 Moje štatistiky</b><br><span class="mt">${(() => { const d = Object.values(stats().days); const t = (x) => x.v + x.m + x.s; return `Celkovo ${fmtDur(d.reduce((n, x) => n + t(x), 0))} · dnes ${fmtDur(t(stats().days[dayKey()] || { v: 0, m: 0, s: 0 }))} · top kanály, hudba, grafy`; })()}</span></span><span class="me-go">›</span></a>
+      <h2>Záloha a prenos dát</h2>
+      <div class="set-row"><span><b>Exportovať dáta</b><br><span class="mt">História, obľúbené kanály, albumy, nastavenia a štatistiky do súboru (na iPhone: Uložiť do Súborov)</span></span><button class="pill" id="bk-export">⬆ Exportovať</button></div>
+      <div class="set-row"><span><b>Importovať dáta</b><br><span class="mt">Nahradí dáta v tomto zariadení údajmi zo zálohy</span></span><button class="pill" id="bk-import">⬇ Importovať</button></div>
+      <input type="file" id="bk-file" accept=".json,application/json" hidden>
       <h2>Dáta v tomto prehliadači</h2>
       <div class="set-row"><span><b>História pozerania</b><br><span class="mt">${data.history.length} videí</span></span><button class="pill" data-clear="history">Vymazať</button></div>
       <div class="set-row"><span><b>Obľúbené kanály</b><br><span class="mt">${data.channels.length} kanálov</span></span><button class="pill" data-clear="channels">Vymazať</button></div>
@@ -2372,6 +2398,32 @@
       }
     };
     document.getElementById('set-install')?.addEventListener('click', installApp);
+    document.getElementById('bk-export').onclick = () => {
+      const copy = { ...data };
+      delete copy.adminKey;
+      const blob = new Blob([JSON.stringify({ app: 'jutube', version: 1, date: new Date().toISOString(), data: copy })], { type: 'application/json' });
+      shareFile(blob, `jutube-zaloha-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+    };
+    document.getElementById('bk-import').onclick = () => document.getElementById('bk-file').click();
+    document.getElementById('bk-file').onchange = async (e) => {
+      const f = e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      try {
+        const j = JSON.parse(await f.text());
+        if (j?.app !== 'jutube' || !j.data || typeof j.data !== 'object') throw new Error('Toto nie je záloha JUTUBE');
+        if (!confirm('Nahradiť históriu, obľúbené kanály, albumy a nastavenia v tomto zariadení údajmi zo zálohy?')) return;
+        const keep = data.adminKey;
+        for (const k of Object.keys(data)) delete data[k];
+        Object.assign(data, { history: [], pos: {}, quality: 1080, channels: [], autoplay: true, albums: [] }, j.data);
+        if (keep) data.adminKey = keep;
+        save();
+        toast('Záloha obnovená');
+        setTimeout(() => location.reload(), 600);
+      } catch (err) {
+        toast(`Import sa nepodaril: ${err.message}`);
+      }
+    };
     document.getElementById('mode-seg').onclick = (e) => {
       const b = e.target.closest('[data-mode]');
       if (!b) return;
@@ -2391,8 +2443,9 @@
     app.querySelectorAll('[data-set]').forEach((el) => {
       el.onchange = () => {
         const k = el.dataset.set;
-        data[k] = k === 'cc' ? el.value : +el.value;
+        data[k] = k === 'cc' || k === 'eq' ? el.value : +el.value;
         save();
+        if (k === 'eq' || k === 'boost') applyAudioFx(video);
         toast('Uložené');
       };
     });
@@ -3546,7 +3599,9 @@
 
   // ================= MP3 =================
   // YouTube dáva zvuk ako AAC (m4a). Stiahne sa, dekóduje cez Web Audio a zakóduje do MP3 (lamejs).
-  const MP3_MAX_SEC = 20 * 60; // dlhšie nahrávky by v pamäti (nekomprimovaný zvuk) nezvládol najmä telefón
+  // Dlhé nahrávky sa dekódujú po ~5 minútových kusoch (jedným kódovačom), takže zaberú málo pamäte.
+  const MP3_MAX_SEC = 2 * 3600;
+  const CHUNK_SEC = 300;
   let lamePromise = null;
   function loadLame() {
     if (window.lamejs) return Promise.resolve(window.lamejs);
@@ -3559,62 +3614,158 @@
     }));
   }
 
-  async function decodeAudio(bytes) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    let ctx;
-    try { ctx = new AC({ sampleRate: 44100 }); } catch { ctx = new AC(); }
+  const concatU8 = (parts) => {
+    const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+    let o = 0;
+    for (const p of parts) { out.set(p, o); o += p.length; }
+    return out;
+  };
+
+  // „priming“ AAC z edit listu (sekundy) – o toľko dekodér skráti začiatok každého dekódovaného kusu
+  function elstPrimingSec(buf, F) {
     try {
-      // kópia: decodeAudioData odpojí pôvodný buffer
-      return await new Promise((resolve, reject) => ctx.decodeAudioData(bytes.slice().buffer, resolve, reject));
-    } finally {
-      ctx.close?.().catch(() => {});
+      const edts = child(buf, F.trak, 'edts');
+      const elst = edts && child(buf, edts, 'elst');
+      if (!elst) return 0;
+      const v = buf[elst.body];
+      const o = elst.body + 8;
+      const mt = v === 1 ? u32(buf, o + 8) * 2 ** 32 + u32(buf, o + 12) : u32(buf, o + 4) | 0;
+      if (mt <= 0 || mt > 1e7) return 0;
+      const mdhd = child(buf, child(buf, F.trak, 'mdia'), 'mdhd');
+      const ts = u32(buf, mdhd.body + (buf[mdhd.body] === 1 ? 20 : 12));
+      return ts ? mt / ts : 0;
+    } catch {
+      return 0;
     }
   }
 
-  async function encodeMp3(ab, kbps, onProgress, signal) {
+  async function audioToMp3(bytes, kbps, onProgress, signal) {
     const lame = await loadLame();
-    const ch = Math.min(2, ab.numberOfChannels);
-    const enc = new lame.Mp3Encoder(ch, ab.sampleRate, kbps);
+    const AC = window.AudioContext || window.webkitAudioContext;
+    let ctx;
+    try { ctx = new AC({ sampleRate: 44100 }); } catch { ctx = new AC(); }
+    const decode = (u8) => new Promise((resolve, reject) => ctx.decodeAudioData(u8.buffer, resolve, reject));
     const i16 = (f) => {
       const o = new Int16Array(f.length);
       for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); o[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
       return o;
     };
-    const c0 = ab.getChannelData(0);
-    const c1 = ch > 1 ? ab.getChannelData(1) : null;
     const BLOCK = 1152 * 16;
     const parts = [];
-    for (let i = 0, n = 0; i < c0.length; i += BLOCK, n++) {
-      if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
-      const l = i16(c0.subarray(i, i + BLOCK));
-      const out = c1 ? enc.encodeBuffer(l, i16(c1.subarray(i, i + BLOCK))) : enc.encodeBuffer(l);
-      if (out.length) parts.push(out);
-      if (n % 25 === 0) { onProgress(i / c0.length); await sleep(0); }
+    let enc = null;
+    // pošle dekódovaný zvuk (od vzorky `skip`) do kódovača
+    const push = async (ab, skip, base, span) => {
+      const ch = Math.min(2, ab.numberOfChannels);
+      enc ||= new lame.Mp3Encoder(ch, ab.sampleRate, kbps);
+      const c0 = ab.getChannelData(0);
+      const c1 = ch > 1 ? ab.getChannelData(1) : null;
+      for (let i = skip, n = 0; i < c0.length; i += BLOCK, n++) {
+        if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        const l = i16(c0.subarray(i, i + BLOCK));
+        const out = c1 ? enc.encodeBuffer(l, i16(c1.subarray(i, i + BLOCK))) : enc.encodeBuffer(l);
+        if (out.length) parts.push(out);
+        if (n % 25 === 0) { onProgress(base + span * ((i - skip) / Math.max(1, c0.length - skip))); await sleep(0); }
+      }
+    };
+    try {
+      let F = null;
+      try { F = parseFmp4(bytes); } catch {}
+      const frags = (F?.frags || []).filter((f) => f.mdat);
+      const total = frags.length ? frags[frags.length - 1].time - frags[0].time : 0;
+      if (!frags.length || total <= CHUNK_SEC * 1.25) {
+        await push(await decode(bytes), 0, 0, 1);
+      } else {
+        const ftyp = F.top.find((b) => b.type === 'ftyp');
+        const init = [...(ftyp ? [copyBox(bytes, ftyp)] : []), copyBox(bytes, F.moov)];
+        const prime = elstPrimingSec(bytes, F);
+        const groups = [];
+        let start = 0;
+        for (let i = 1; i <= frags.length; i++) {
+          if (i === frags.length || frags[i].time - frags[start].time >= CHUNK_SEC) { groups.push([start, i]); start = i; }
+        }
+        for (let g = 0; g < groups.length; g++) {
+          const [a, b] = groups[g];
+          // jeden fragment navyše z minulého kusu: dekodér sa „zahreje“ a jeho zvuk potom zahodíme
+          const from = a > 0 ? a - 1 : a;
+          const pieces = [...init];
+          for (let i = from; i < b; i++) pieces.push(bytes.subarray(frags[i].moof.start, frags[i].mdat.end));
+          const ab = await decode(concatU8(pieces));
+          const skip = a > 0 ? Math.max(0, Math.round((frags[a].time - frags[a - 1].time - prime) * ab.sampleRate)) : 0;
+          await push(ab, skip, g / groups.length, 1 / groups.length);
+        }
+      }
+      const end = enc.flush();
+      if (end.length) parts.push(end);
+      return parts;
+    } finally {
+      ctx.close?.().catch(() => {});
     }
-    const end = enc.flush();
-    if (end.length) parts.push(end);
-    return new Blob(parts, { type: 'audio/mpeg' });
+  }
+
+  // --- ID3 tagy (verzia 2.3): názov, interpret, album, obal ---
+  const te = new TextEncoder();
+  function id3Frame(id, body) {
+    const f = new Uint8Array(10 + body.length);
+    f.set(te.encode(id), 0);
+    new DataView(f.buffer).setUint32(4, body.length);
+    f.set(body, 10);
+    return f;
+  }
+  function id3Text(id, str) {
+    const u = new Uint8Array(3 + str.length * 2);
+    u[0] = 1; u[1] = 0xff; u[2] = 0xfe; // UTF-16 s BOM
+    for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); u[3 + i * 2] = c & 255; u[4 + i * 2] = c >> 8; }
+    return id3Frame(id, u);
+  }
+  function id3Tag({ title, artist, album, cover }) {
+    const frames = [];
+    if (title) frames.push(id3Text('TIT2', title));
+    if (artist) frames.push(id3Text('TPE1', artist));
+    if (album) frames.push(id3Text('TALB', album));
+    if (cover) {
+      const mime = te.encode('image/jpeg');
+      const b = new Uint8Array(4 + mime.length + cover.length);
+      b.set(mime, 1);
+      b[1 + mime.length + 1] = 3; // predný obal
+      b.set(cover, 4 + mime.length);
+      frames.push(id3Frame('APIC', b));
+    }
+    const size = frames.reduce((n, f) => n + f.length, 0);
+    const h = new Uint8Array(10);
+    h.set(te.encode('ID3'), 0);
+    h[3] = 3;
+    h[6] = (size >> 21) & 127; h[7] = (size >> 14) & 127; h[8] = (size >> 7) & 127; h[9] = size & 127;
+    return [h, ...frames];
   }
 
   const fetchWholeAudio = (s, bar, signal) => {
     const total = +s.audio.contentLength;
     let got = 0;
-    return fetchWhole(s, { ...s.audio }, (n) => { got += n; bar.set(got / total); }, signal);
+    return fetchWhole(s, { ...s.audio }, (n) => { got += n; bar.set(0.4 * (got / total)); }, signal);
   };
+
+  // stiahne zvuk a vyrobí MP3 s tagmi (bar.set: 0–40 % sťahovanie, 40–100 % kódovanie)
+  async function makeMp3(s, bar, signal, album) {
+    const bytes = await fetchWholeAudio(s, bar, signal);
+    bar.label('Vytváram MP3');
+    await sleep(30);
+    const mp3 = await audioToMp3(bytes, 192, (p) => bar.set(0.4 + 0.6 * p), signal);
+    let cover = null;
+    try {
+      const r = await fetch(`https://i.ytimg.com/vi/${s.details.id}/hqdefault.jpg`, { signal, credentials: 'omit' });
+      if (r.ok) cover = new Uint8Array(await r.arrayBuffer());
+    } catch (e) { if (e.name === 'AbortError') throw e; }
+    return new Blob([...id3Tag({ title: s.details.title, artist: s.details.channel, album: album || 'JUTUBE', cover }), ...mp3], { type: 'audio/mpeg' });
+  }
 
   async function downloadMp3(s) {
     if (downloading) return toast('Už sa sťahuje iné video – počkaj, kým skončí');
-    if (s.details.length > MP3_MAX_SEC) return toast(`MP3 sa robí z nahrávok do ${MP3_MAX_SEC / 60} minút – pre dlhšie použi „Stiahnuť len zvuk“`);
+    if (s.details.length > MP3_MAX_SEC) return toast(`MP3 sa robí z nahrávok do ${MP3_MAX_SEC / 3600} hodín – pre dlhšie použi „Stiahnuť len zvuk“`);
     const ac = new AbortController();
     downloading = ac;
     const bar = showProgress('Sťahujem zvuk', () => ac.abort());
     try {
-      const a = await fetchWholeAudio(s, bar, ac.signal);
-      bar.label('Dekódujem zvuk…');
-      await sleep(30);
-      const ab = await decodeAudio(a);
-      bar.label('Vytváram MP3…');
-      const blob = await encodeMp3(ab, 192, (p) => bar.set(p), ac.signal);
+      const blob = await makeMp3(s, bar, ac.signal);
       saveBlob(blob, fileName(s.details.title, '.mp3').replace(/ \.mp3$/, '.mp3'));
       await libAdd(s, 'mp3', blob);
       bar.done('MP3 hotové ✓');
@@ -3623,6 +3774,36 @@
     } finally {
       downloading = null;
     }
+  }
+
+  // viac skladieb naraz (playlist, album): ukladajú sa do sekcie Stiahnuté
+  async function downloadMp3Batch(items, listName) {
+    if (downloading) return toast('Už sa sťahuje iné video – počkaj, kým skončí');
+    if (!items.length) return;
+    if (!confirm(`Stiahnuť ${plural(items.length, 'skladbu', 'skladby', 'skladieb')} ako MP3? Uložia sa do sekcie Stiahnuté a môže to chvíľu trvať.`)) return;
+    const ac = new AbortController();
+    downloading = ac;
+    const n = items.length;
+    const bar = showProgress(`MP3 0/${n}`, () => ac.abort());
+    let ok = 0;
+    let fail = 0;
+    for (let i = 0; i < n && !ac.signal.aborted; i++) {
+      bar.label(`MP3 ${i + 1}/${n} · ${items[i].title || ''}`.slice(0, 70));
+      const sub = { set: (p) => bar.set((i + p) / n), label: () => {} };
+      try {
+        const s = await getStreams(items[i].id);
+        if (s.details.length > MP3_MAX_SEC) { fail++; continue; }
+        const blob = await makeMp3(s, sub, ac.signal, listName);
+        await libPut(libItem(s, 'mp3', blob));
+        ok++;
+      } catch (e) {
+        if (e.name === 'AbortError') break;
+        fail++;
+      }
+    }
+    bar.done(`Hotovo: ${ok} MP3${fail ? `, ${fail} sa nepodarilo` : ''} – nájdeš ich v sekcii Stiahnuté`);
+    downloading = null;
+    persistStorage();
   }
 
   // ================= knižnica stiahnutých súborov =================
@@ -3647,12 +3828,16 @@
   const libPut = (item) => libReq('readwrite', (st) => st.put(item));
   const libDel = (id) => libReq('readwrite', (st) => st.delete(id));
   const libId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const libItem = (s, kind, blob) => ({ id: libId(), vid: s.details.id, title: s.details.title, channel: s.details.channel, kind, size: blob.size, date: Date.now(), blob });
+  // požiada prehliadač, aby súbory nemazal pri nedostatku miesta
+  const persistStorage = () => { try { navigator.storage?.persist?.(); } catch {} };
 
   // po stiahnutí: uloží súbor aj do knižnice (ak to používateľ nevypol)
   async function libAdd(s, kind, blob) {
     if (data.dlLibrary === false) return;
     try {
-      await libPut({ id: libId(), vid: s.details.id, title: s.details.title, channel: s.details.channel, kind, size: blob.size, date: Date.now(), blob });
+      await libPut(libItem(s, kind, blob));
+      persistStorage();
       toast('Uložené aj v sekcii Stiahnuté');
     } catch {
       toast('Do aplikácie sa súbor nepodarilo uložiť (málo miesta?)');
@@ -3660,23 +3845,30 @@
   }
 
   const LIB_MIME = { mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'video/mp4' };
-  const fmtSize = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1024))} kB`);
+  const fmtSize = (b) => (b >= 1073741824 ? `${(b / 1073741824).toFixed(1).replace('.', ',')} GB` : b >= 1048576 ? `${(b / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1024))} kB`);
+  const LIB_SORTS = {
+    new: ['Najnovšie', (a, b) => b.date - a.date],
+    big: ['Najväčšie', (a, b) => b.size - a.size],
+    name: ['Názov A–Z', (a, b) => a.title.localeCompare(b.title, 'sk')],
+  };
 
-  let lib = null; // { items, idx, el, url } – prehrávač na stránke Stiahnuté
-  function libStop() {
-    if (!lib) return;
-    try { lib.el?.pause(); } catch {}
-    try { if (lib.url) URL.revokeObjectURL(lib.url); } catch {}
-    lib = null;
-  }
-
-  async function libShare(it) {
-    const name = `${fileName(it.title, '').trim()}.${it.kind}`;
-    const file = new File([it.blob], name, { type: it.blob.type || LIB_MIME[it.kind] || '' });
+  // uloží súbor cez zdieľanie (iOS: Uložiť do Súborov), inak ako bežné stiahnutie
+  async function shareFile(blob, name, type) {
+    const file = new File([blob], name, { type: type || blob.type || '' });
     if (navigator.canShare?.({ files: [file] })) {
       try { await navigator.share({ files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; }
     }
-    saveBlob(it.blob, name);
+    saveBlob(blob, name);
+  }
+  const libShare = (it) => shareFile(it.blob, `${fileName(it.title, '').trim()}.${it.kind}`, it.blob.type || LIB_MIME[it.kind]);
+
+  let lib = null; // stav stránky Stiahnuté (prehrávač, zobrazenie, výber)
+  function libStop() {
+    if (!lib) return;
+    try { lib.flush?.(); } catch {}
+    try { lib.el?.pause(); } catch {}
+    try { if (lib.url) URL.revokeObjectURL(lib.url); } catch {}
+    lib = null;
   }
 
   async function renderDownloads(app) {
@@ -3684,80 +3876,290 @@
     document.getElementById('q').value = '';
     let items = [];
     try { items = await libAll(); } catch {}
-    const state = (lib = { items, idx: -1, el: null, url: null });
+    data.libLists ||= [];
+    data.libPos ||= {};
+    const st = (lib = { all: items, view: 'all', sort: 'new', selMode: false, sel: new Set(), queue: [], qi: -1, cur: null, shuffle: !!data.libShuffle, repeat: data.libRepeat || 'off', el: null, url: null, flush: null });
     setHTML(app, `<div class="lib">
-      <div class="music-bar"><h1>⬇ Stiahnuté</h1><button class="pill pill-w" id="lib-add">＋ Pridať súbory</button></div>
+      <div class="music-bar"><h1>⬇ Stiahnuté</h1><span class="acts"><button class="pill" id="lib-sel">☑ Spravovať</button><button class="pill pill-w" id="lib-add">＋ Pridať súbory</button></span></div>
       <input type="file" id="lib-file" multiple hidden accept="audio/*,video/*,.mp3,.m4a,.mp4,.m4v,.mov">
+      <div class="lib-tabs" id="lib-tabs"></div>
       <div class="lib-player" id="lib-player" hidden></div>
+      <div class="lib-tools"><select class="pill" id="lib-sort">${Object.entries(LIB_SORTS).map(([k, [l]]) => `<option value="${k}">${l}</option>`).join('')}</select></div>
+      <div class="lib-bulk" id="lib-bulk" hidden></div>
       <div class="lib-list" id="lib-list"></div>
       <p class="mt" id="lib-info"></p>
     </div>`);
-    const list = document.getElementById('lib-list');
-    const box = document.getElementById('lib-player');
+    const $ = (id) => document.getElementById(id);
+    const list = $('lib-list');
+    const box = $('lib-player');
     const kindIcon = (k) => (k === 'mp4' ? SN_ICONS.shorts : SN_ICONS.music);
+    const byId = (id) => st.all.find((x) => x.id === id);
 
-    const paint = () => {
-      document.getElementById('lib-info').textContent = state.items.length
-        ? `${plural(state.items.length, 'súbor', 'súbory', 'súborov')} · ${fmtSize(state.items.reduce((n, x) => n + x.size, 0))}`
-        : '';
-      setHTML(list, state.items.length ? state.items.map((it, i) => `<div class="lib-row${i === state.idx ? ' on' : ''}" data-i="${i}">
-          <span class="lib-th">${it.vid ? `<img src="${thumb(esc(it.vid))}" alt="" loading="lazy">` : kindIcon(it.kind)}</span>
-          <span class="lib-t"><b>${esc(it.title)}</b><span class="mt">${it.kind.toUpperCase()} · ${fmtSize(it.size)}${it.channel ? ` · ${esc(it.channel)}` : ''}</span></span>
-          <span class="lib-act"><button class="pill" data-share="${i}" title="Uložiť do Súborov / zdieľať">⬆</button><button class="pill" data-del="${i}" title="Zmazať">🗑</button></span>
-        </div>`).join('')
-        : '<div class="empty">Zatiaľ tu nič nie je.<br>Súbory sa sem ukladajú po sťahovaní (⋯ → Stiahnuť ako MP3 / video), alebo ich pridaj tlačidlom ＋ Pridať súbory.</div>');
+    const visible = () => {
+      let l = st.all;
+      if (st.view !== 'all') {
+        const ids = data.libLists.find((x) => x.id === st.view)?.ids || [];
+        l = ids.map(byId).filter(Boolean);
+      }
+      return [...l].sort(LIB_SORTS[st.sort][1]);
     };
 
-    const play = (i) => {
-      if (state !== lib || !state.items[i]) return;
-      const it = state.items[i];
-      try { state.el?.pause(); } catch {}
-      if (state.url) URL.revokeObjectURL(state.url);
-      state.idx = i;
-      state.url = URL.createObjectURL(it.blob);
+    const paintTabs = () => {
+      const chip = (v, label) => `<button class="pill${st.view === v ? ' pill-w' : ''}" data-view="${esc(v)}">${esc(label)}</button>`;
+      setHTML($('lib-tabs'), `${chip('all', 'Všetko')}${data.libLists.map((l) => chip(l.id, `${l.name} (${l.ids.length})`)).join('')}<button class="pill" id="lib-newlist">＋ Zoznam</button>${st.view !== 'all' ? '<button class="pill" id="lib-ren" title="Premenovať zoznam">✎</button><button class="pill" id="lib-dellist" title="Zmazať zoznam">🗑</button>' : ''}`);
+    };
+
+    const paintInfo = async () => {
+      const total = st.all.reduce((n, x) => n + x.size, 0);
+      let txt = st.all.length ? `${plural(st.all.length, 'súbor', 'súbory', 'súborov')} · ${fmtSize(total)}` : '';
+      try {
+        const e = await navigator.storage?.estimate?.();
+        if (e?.quota) txt += `${txt ? ' · ' : ''}využité miesto prehliadača ${fmtSize(e.usage || 0)} z ${fmtSize(e.quota)}`;
+      } catch {}
+      const el = $('lib-info');
+      if (el) el.textContent = txt;
+    };
+
+    const paintBulk = () => {
+      const b = $('lib-bulk');
+      b.hidden = !st.selMode;
+      if (!st.selMode) return;
+      setHTML(b, `<span class="mt">Vybrané: ${st.sel.size}</span><button class="pill" id="lib-selall">Vybrať všetko</button><button class="pill" id="lib-seldel"${st.sel.size ? '' : ' disabled'}>🗑 Zmazať vybrané</button><button class="pill" id="lib-seldone">Hotovo</button>`);
+    };
+
+    const paintList = () => {
+      const vis = visible();
+      setHTML(list, vis.length ? vis.map((it) => {
+        const p = data.libPos[it.id];
+        return `<div class="lib-row${it.id === st.cur ? ' on' : ''}" data-id="${esc(it.id)}">
+          ${st.selMode ? `<input type="checkbox" data-sel="${esc(it.id)}"${st.sel.has(it.id) ? ' checked' : ''}>` : ''}
+          <span class="lib-th">${it.vid ? `<img src="${thumb(esc(it.vid))}" alt="" loading="lazy">` : kindIcon(it.kind)}</span>
+          <span class="lib-t"><b>${esc(it.title)}</b><span class="mt">${it.kind.toUpperCase()} · ${fmtSize(it.size)}${it.channel ? ` · ${esc(it.channel)}` : ''}${p ? ` · pokračovať od ${fmt(p.p)}` : ''}</span></span>
+          <span class="lib-act"><button class="pill" data-addl="${esc(it.id)}" title="Do zoznamu">＋</button><button class="pill" data-share="${esc(it.id)}" title="Uložiť do Súborov / zdieľať">⬆</button><button class="pill" data-del="${esc(it.id)}" title="Zmazať">🗑</button></span>
+        </div>`;
+      }).join('')
+        : `<div class="empty">${st.all.length ? 'V tomto zozname zatiaľ nič nie je.' : 'Zatiaľ tu nič nie je.<br>Súbory sa sem ukladajú po sťahovaní (⋯ → Stiahnuť ako MP3 / video), alebo ich pridaj tlačidlom ＋ Pridať súbory.'}</div>`);
+      paintBulk();
+    };
+
+    // ----- prehrávanie -----
+    const shuffleQueue = (first) => {
+      const rest = st.queue.filter((x) => x !== first).sort(() => Math.random() - 0.5);
+      st.queue = [first, ...rest];
+    };
+    const step = (dir) => {
+      if (!st.queue.length) return false;
+      let i = st.qi + dir;
+      if (i >= st.queue.length || i < 0) {
+        if (st.repeat === 'all' || dir < 0) i = (i + st.queue.length) % st.queue.length;
+        else return false;
+      }
+      play(st.queue[i], false);
+      return true;
+    };
+    function play(id, fresh = true) {
+      const it = byId(id);
+      if (!it || st !== lib) return;
+      try { st.flush?.(); } catch {}
+      try { st.el?.pause(); } catch {}
+      if (st.url) URL.revokeObjectURL(st.url);
+      if (fresh) {
+        st.queue = visible().map((x) => x.id);
+        if (st.shuffle) shuffleQueue(id);
+      }
+      st.qi = st.queue.indexOf(id);
+      st.cur = id;
+      st.url = URL.createObjectURL(it.blob);
       video?.pause(); // hlavný prehrávač nech nehrá súbežne
       const tag = it.kind === 'mp4' ? 'video' : 'audio';
       setHTML(box, `${tag === 'video' ? '' : `<div class="lib-cover">${it.vid ? `<img src="https://i.ytimg.com/vi/${esc(it.vid)}/hqdefault.jpg" alt="">` : SN_ICONS.music}</div>`}
         <${tag} id="lib-el" controls playsinline autoplay></${tag}>
-        <div class="lib-now"><b>${esc(it.title)}</b><span class="lib-act"><button class="pill" id="lib-prev" title="Predchádzajúce">⏮</button><button class="pill" id="lib-next" title="Ďalšie">⏭</button></span></div>`);
+        <div class="lib-now"><b>${esc(it.title)}</b></div>
+        <div class="lib-ctrl">
+          <button class="pill" id="lib-prev" title="Predchádzajúce">⏮</button>
+          <button class="pill" id="lib-next" title="Ďalšie">⏭</button>
+          <button class="pill${st.shuffle ? ' pill-w' : ''}" id="lib-shuf" title="Náhodné poradie">🔀</button>
+          <button class="pill${st.repeat !== 'off' ? ' pill-w' : ''}" id="lib-rep" title="Opakovanie">${st.repeat === 'one' ? '🔂' : '🔁'}</button>
+          <select class="pill" id="lib-eq" title="Ekvalizér">${Object.entries(EQ_PRESETS).map(([k, [l]]) => `<option value="${k}"${(data.eq || 'off') === k ? ' selected' : ''}>🎚 ${esc(l)}</option>`).join('')}</select>
+        </div>`);
       box.hidden = false;
-      const el = document.getElementById('lib-el');
-      state.el = el;
-      el.src = state.url;
+      const el = $('lib-el');
+      st.el = el;
+      let lastSave = 0;
+      const savePos = () => {
+        if (!el.duration || !isFinite(el.duration) || el.currentTime < 5) return;
+        data.libPos[id] = { p: Math.floor(el.currentTime), d: Math.floor(el.duration) };
+        save();
+      };
+      st.flush = savePos;
+      el.addEventListener('timeupdate', () => { if (Date.now() - lastSave > 4000) { lastSave = Date.now(); savePos(); } });
+      el.addEventListener('pause', savePos);
+      el.addEventListener('playing', () => applyAudioFx(el));
+      // pokračovanie tam, kde si skončil
+      el.addEventListener('loadedmetadata', () => {
+        const p = data.libPos[id];
+        if (p && p.p > 5 && p.p < (el.duration || p.d) - 10) el.currentTime = p.p;
+      }, { once: true });
+      el.addEventListener('ended', () => {
+        delete data.libPos[id];
+        save();
+        if (st.repeat === 'one') { el.currentTime = 0; el.play().catch(() => {}); } else step(1);
+      });
+      el.src = st.url;
       el.play().catch(() => {});
-      el.onended = () => { if (state.idx < state.items.length - 1) play(state.idx + 1); };
-      document.getElementById('lib-prev').onclick = () => play(state.idx > 0 ? state.idx - 1 : state.items.length - 1);
-      document.getElementById('lib-next').onclick = () => play(state.idx < state.items.length - 1 ? state.idx + 1 : 0);
+      $('lib-prev').onclick = () => step(-1);
+      $('lib-next').onclick = () => step(1);
+      $('lib-shuf').onclick = () => {
+        st.shuffle = !st.shuffle;
+        data.libShuffle = st.shuffle;
+        save();
+        st.queue = visible().map((x) => x.id);
+        if (st.shuffle) shuffleQueue(st.cur);
+        st.qi = st.queue.indexOf(st.cur);
+        $('lib-shuf').classList.toggle('pill-w', st.shuffle);
+      };
+      $('lib-rep').onclick = () => {
+        st.repeat = st.repeat === 'off' ? 'all' : st.repeat === 'all' ? 'one' : 'off';
+        data.libRepeat = st.repeat;
+        save();
+        const b = $('lib-rep');
+        b.textContent = st.repeat === 'one' ? '🔂' : '🔁';
+        b.classList.toggle('pill-w', st.repeat !== 'off');
+        toast(st.repeat === 'off' ? 'Opakovanie vypnuté' : st.repeat === 'all' ? 'Opakovať všetko' : 'Opakovať túto skladbu');
+      };
+      $('lib-eq').onchange = (e) => { data.eq = e.target.value; save(); applyAudioFx(el); };
       if (navigator.mediaSession) {
         const art = it.vid ? [{ src: `https://i.ytimg.com/vi/${it.vid}/hqdefault.jpg`, sizes: '480x360', type: 'image/jpeg' }] : [];
         navigator.mediaSession.metadata = new MediaMetadata({ title: it.title, artist: it.channel || '', album: 'JUTUBE', artwork: art });
-        navigator.mediaSession.setActionHandler('previoustrack', () => document.getElementById('lib-prev')?.click());
-        navigator.mediaSession.setActionHandler('nexttrack', () => document.getElementById('lib-next')?.click());
+        navigator.mediaSession.setActionHandler('previoustrack', () => step(-1));
+        navigator.mediaSession.setActionHandler('nexttrack', () => step(1));
       }
-      paint();
+      paintList();
       box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    // ----- mazanie -----
+    const removeFromState = (id) => {
+      st.all = st.all.filter((x) => x.id !== id);
+      for (const l of data.libLists) l.ids = l.ids.filter((x) => x !== id);
+      delete data.libPos[id];
+      st.sel.delete(id);
+      st.queue = st.queue.filter((x) => x !== id);
+      if (st.cur === id) {
+        try { st.el?.pause(); } catch {}
+        st.cur = null;
+        st.qi = -1;
+        box.hidden = true;
+      } else st.qi = st.queue.indexOf(st.cur);
+    };
+    const deleteIds = async (ids) => {
+      for (const id of ids) { await libDel(id).catch(() => {}); removeFromState(id); }
+      save();
+      paintTabs();
+      paintList();
+      paintInfo();
     };
 
-    list.onclick = async (e) => {
+    // ----- zoznamy -----
+    const listPop = (id) => {
+      const pop = document.createElement('div');
+      pop.className = 'lib-pop';
+      const draw = () => setHTML(pop, `<div><b>Do zoznamu</b>${data.libLists.map((l) => `<button class="pill${l.ids.includes(id) ? ' pill-w' : ''}" data-l="${esc(l.id)}">${l.ids.includes(id) ? '✓ ' : ''}${esc(l.name)}</button>`).join('')}<button class="pill" data-l="__new">＋ Nový zoznam…</button><button class="pill" data-l="__close">Zavrieť</button></div>`);
+      draw();
+      document.body.append(pop);
+      pop.onclick = (e) => {
+        if (e.target === pop) return pop.remove();
+        const b = e.target.closest('[data-l]');
+        if (!b) return;
+        const k = b.dataset.l;
+        if (k === '__close') return pop.remove();
+        if (k === '__new') {
+          const name = prompt('Názov nového zoznamu:');
+          if (!name?.trim()) return;
+          data.libLists.push({ id: libId(), name: name.trim().slice(0, 60), ids: [id] });
+        } else {
+          const l = data.libLists.find((x) => x.id === k);
+          if (l) l.ids = l.ids.includes(id) ? l.ids.filter((x) => x !== id) : [...l.ids, id];
+        }
+        save();
+        draw();
+        paintTabs();
+        paintList();
+      };
+    };
+
+    $('lib-tabs').onclick = (e) => {
+      const v = e.target.closest('[data-view]');
+      if (v) { st.view = v.dataset.view; paintTabs(); paintList(); return; }
+      const id = e.target.closest('button')?.id;
+      if (id === 'lib-newlist') {
+        const name = prompt('Názov nového zoznamu:');
+        if (!name?.trim()) return;
+        const l = { id: libId(), name: name.trim().slice(0, 60), ids: [] };
+        data.libLists.push(l);
+        save();
+        st.view = l.id;
+        paintTabs();
+        paintList();
+      } else if (id === 'lib-ren') {
+        const l = data.libLists.find((x) => x.id === st.view);
+        const name = l && prompt('Nový názov zoznamu:', l.name);
+        if (!name?.trim()) return;
+        l.name = name.trim().slice(0, 60);
+        save();
+        paintTabs();
+      } else if (id === 'lib-dellist') {
+        const l = data.libLists.find((x) => x.id === st.view);
+        if (!l || !confirm(`Zmazať zoznam „${l.name}“? Súbory zostanú v sekcii Stiahnuté.`)) return;
+        data.libLists = data.libLists.filter((x) => x.id !== l.id);
+        save();
+        st.view = 'all';
+        paintTabs();
+        paintList();
+      }
+    };
+
+    $('lib-sort').onchange = (e) => { st.sort = e.target.value; paintList(); };
+
+    list.onclick = (e) => {
+      const sel = e.target.closest('[data-sel]');
       const sh = e.target.closest('[data-share]');
       const dl = e.target.closest('[data-del]');
-      if (sh) return libShare(state.items[+sh.dataset.share]);
+      const ad = e.target.closest('[data-addl]');
+      if (sh) return libShare(byId(sh.dataset.share));
+      if (ad) return listPop(ad.dataset.addl);
       if (dl) {
-        const i = +dl.dataset.del;
-        const it = state.items[i];
-        if (!confirm(`Zmazať „${it.title}“?`)) return;
-        await libDel(it.id).catch(() => {});
-        if (i === state.idx) { try { state.el?.pause(); } catch {} box.hidden = true; state.idx = -1; }
-        else if (i < state.idx) state.idx--;
-        state.items.splice(i, 1);
-        return paint();
+        const it = byId(dl.dataset.del);
+        if (it && confirm(`Zmazať „${it.title}“?`)) deleteIds([it.id]);
+        return;
       }
       const row = e.target.closest('.lib-row');
-      if (row) play(+row.dataset.i);
+      if (!row) return;
+      const id = row.dataset.id;
+      if (st.selMode) {
+        if (st.sel.has(id)) st.sel.delete(id); else st.sel.add(id);
+        paintList();
+      } else if (!sel) play(id);
     };
 
-    document.getElementById('lib-add').onclick = () => document.getElementById('lib-file').click();
-    document.getElementById('lib-file').onchange = async (e) => {
+    $('lib-sel').onclick = () => {
+      st.selMode = !st.selMode;
+      st.sel.clear();
+      $('lib-sel').classList.toggle('pill-w', st.selMode);
+      paintList();
+    };
+    $('lib-bulk').onclick = (e) => {
+      const id = e.target.closest('button')?.id;
+      if (id === 'lib-selall') { for (const it of visible()) st.sel.add(it.id); paintList(); }
+      else if (id === 'lib-seldone') $('lib-sel').click();
+      else if (id === 'lib-seldel' && st.sel.size && confirm(`Zmazať ${plural(st.sel.size, 'súbor', 'súbory', 'súborov')}?`)) {
+        deleteIds([...st.sel]);
+      }
+    };
+
+    // ----- pridanie vlastných súborov -----
+    $('lib-add').onclick = () => $('lib-file').click();
+    $('lib-file').onchange = async (e) => {
       const files = [...e.target.files];
       e.target.value = '';
       let ok = 0;
@@ -3765,13 +4167,16 @@
         const ext = (f.name.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
         const kind = f.type.startsWith('video/') || ['mp4', 'm4v', 'mov'].includes(ext) ? 'mp4' : ext === 'm4a' ? 'm4a' : 'mp3';
         const it = { id: libId(), vid: '', title: f.name.replace(/\.[^.]+$/, ''), channel: '', kind, size: f.size, date: Date.now(), blob: f };
-        try { await libPut(it); if (state === lib) state.items.unshift(it); ok++; } catch {}
+        try { await libPut(it); if (st === lib) st.all.unshift(it); ok++; } catch {}
       }
-      if (state === lib) { state.idx = -1; box.hidden = true; try { state.el?.pause(); } catch {} paint(); }
+      if (st === lib) { paintList(); paintInfo(); }
+      persistStorage();
       toast(ok ? `Pridané: ${ok}` : 'Súbory sa nepodarilo pridať');
     };
 
-    paint();
+    paintTabs();
+    paintList();
+    paintInfo();
   }
 
   function showProgress(label, onCancel) {
@@ -3838,6 +4243,7 @@
     quality: '<svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>',
     stable: '<svg viewBox="0 0 24 24"><path d="M7 18h2V6H7v12zm4 4h2V2h-2v20zm-8-8h2v-4H3v4zm12 4h2V6h-2v12zm4-8v4h2v-4h-2z"/></svg>',
     audio: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7a2 2 0 0 0 2 2h3v-8H5v-1a7 7 0 0 1 14 0v1h-3v8h3a2 2 0 0 0 2-2v-7a9 9 0 0 0-9-9z"/></svg>',
+    boost: '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>',
     pip: '<svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>',
   };
 
@@ -4058,33 +4464,97 @@
     toast(on ? '🎧 Len zvuk – šetrí dáta' : 'Video je späť');
   }
 
-  // Stabilná hlasitosť: kompresor vyrovná tiché a hlasné pasáže (Web Audio).
+  // Zvukové efekty (Web Audio): ekvalizér, stabilná hlasitosť a zosilnenie.
+  const EQ_PRESETS = {
+    off: ['Vypnutý', []],
+    bass: ['Basy+', [['lowshelf', 120, 6], ['peaking', 3000, -1.5]]],
+    voice: ['Hlas / podcast', [['highpass', 90, 0], ['peaking', 2500, 4], ['peaking', 6000, 2]]],
+    treble: ['Výšky+', [['highshelf', 6000, 6]]],
+    night: ['Nočný (tichšie basy)', [['lowshelf', 150, -6], ['highshelf', 7000, -3]]],
+  };
   let actx = null;
-  function applyStableVolume() {
-    if (!video) return;
-    if (!data.stableVol && !video.__chain) return;
+  function applyAudioFx(el) {
+    if (!el) return;
+    const eq = EQ_PRESETS[data.eq] ? data.eq : 'off';
+    const boost = +data.boost || 1;
+    if (!data.stableVol && eq === 'off' && boost === 1 && !el.__chain) return;
     try {
       actx = actx || new (window.AudioContext || window.webkitAudioContext)();
       if (actx.state !== 'running') actx.resume();
       // bez povolenia prehliadača (pred prvým kliknutím) zvuk nepresmerúvame, inak by stíchol
-      if (actx.state !== 'running' && !video.__chain) return;
-      if (!video.__chain) {
-        const src = actx.createMediaElementSource(video);
+      if (actx.state !== 'running' && !el.__chain) return;
+      const c = (el.__chain ||= { src: actx.createMediaElementSource(el), nodes: [] });
+      c.src.disconnect();
+      c.nodes.forEach((n) => n.disconnect());
+      const nodes = [];
+      for (const [type, freq, gain] of EQ_PRESETS[eq][1]) {
+        const f = actx.createBiquadFilter();
+        f.type = type;
+        f.frequency.value = freq;
+        f.gain.value = gain;
+        nodes.push(f);
+      }
+      if (data.stableVol) {
         const comp = actx.createDynamicsCompressor();
         comp.threshold.value = -32;
         comp.knee.value = 24;
         comp.ratio.value = 6;
         comp.attack.value = 0.01;
         comp.release.value = 0.3;
-        const gain = actx.createGain();
-        gain.gain.value = 1.6;
-        comp.connect(gain).connect(actx.destination);
-        video.__chain = { src, comp };
+        nodes.push(comp);
       }
-      const { src, comp } = video.__chain;
-      src.disconnect();
-      src.connect(data.stableVol ? comp : actx.destination);
+      const g = actx.createGain();
+      g.gain.value = (data.stableVol ? 1.6 : 1) * boost;
+      nodes.push(g);
+      if (boost > 1) {
+        // obmedzovač proti skresleniu pri zosilnení
+        const lim = actx.createDynamicsCompressor();
+        lim.threshold.value = -2;
+        lim.knee.value = 0;
+        lim.ratio.value = 20;
+        lim.attack.value = 0.003;
+        lim.release.value = 0.1;
+        nodes.push(lim);
+      }
+      let prev = c.src;
+      for (const n of nodes) { prev.connect(n); prev = n; }
+      prev.connect(actx.destination);
+      c.nodes = nodes;
     } catch {}
+  }
+  function applyStableVolume() { applyAudioFx(video); }
+
+  // ================= SponsorBlock =================
+  // Preskakuje sponzorské časti podľa komunitnej databázy sponsor.ajay.app (posiela sa len 4 znaky hashu ID videa).
+  const SB_CATS = { sponsor: 'sponzor', selfpromo: 'vlastná reklama', interaction: 'výzva k interakcii' };
+  async function sbSegments(id) {
+    const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(id)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 4);
+    const url = `https://sponsor.ajay.app/api/skipSegments/${hash}?categories=${encodeURIComponent(JSON.stringify(Object.keys(SB_CATS)))}&actionTypes=${encodeURIComponent('["skip"]')}`;
+    const r = await fetch(url, { credentials: 'omit' });
+    if (!r.ok) return []; // 404 = pre toto video nie sú žiadne značky
+    const list = await r.json();
+    return (list.find((x) => x.videoID === id)?.segments || [])
+      .map((x) => ({ s: x.segment[0], e: x.segment[1], c: x.category }))
+      .filter((x) => x.e - x.s > 1);
+  }
+  async function startSponsorBlock(id) {
+    if (data.sponsorBlock === false || !video) return;
+    const v = video;
+    let segs = [];
+    try { segs = await sbSegments(id); } catch { return; }
+    if (!segs.length || current?.details.id !== id) return;
+    let last = -1;
+    v.addEventListener('timeupdate', () => {
+      if (current?.details.id !== id || data.sponsorBlock === false || v.seeking) return;
+      const t = v.currentTime;
+      const i = segs.findIndex((x) => t >= x.s && t < x.e - 0.3);
+      // každú časť preskočí len raz – keď sa do nej vrátiš ručne, nechá ťa pozerať
+      if (i >= 0 && i !== last) {
+        last = i;
+        v.currentTime = segs[i].e;
+        toast(`⏭ Preskočené: ${SB_CATS[segs[i].c] || 'časť videa'}`);
+      }
+    });
   }
 
   function openPremium() {
@@ -4119,6 +4589,8 @@
         <button class="pc-o" id="pc-speed">${PC_ICONS.speed}<span>Rýchlosť</span></button>
         <button class="pc-o" id="pc-quality">${PC_ICONS.quality}<span>Kvalita</span></button>
         <button class="pc-o" id="pc-stable">${PC_ICONS.stable}<span>Stabilná hlasitosť</span></button>
+        <button class="pc-o" id="pc-eq">${PC_ICONS.stable}<span>Ekvalizér</span></button>
+        <button class="pc-o" id="pc-boost">${PC_ICONS.boost}<span>Zosilnenie</span></button>
         <button class="pc-o" id="pc-audio">${PC_ICONS.audio}<span>Len zvuk</span></button>
         <button class="pc-o" id="pc-pip"${pipSupported() ? '' : ' disabled'}>${PC_ICONS.pip}<span>Obraz v obraze</span></button>
       </div>
@@ -4221,6 +4693,16 @@
       toast(data.stableVol ? 'Stabilná hlasitosť zapnutá' : 'Stabilná hlasitosť vypnutá');
       paintToggles();
     };
+    $('pc-eq').onclick = () => showSub('Ekvalizér', Object.entries(EQ_PRESETS).map(([k, [label]]) => ({ label, k })), (o) => o.k === (data.eq || 'off'), (o) => {
+      data.eq = o.k;
+      save();
+      applyAudioFx(video);
+    });
+    $('pc-boost').onclick = () => showSub('Zosilnenie hlasitosti', [1, 1.5, 2].map((x) => ({ label: x === 1 ? 'Normálne' : `${x * 100} %`, x })), (o) => o.x === (+data.boost || 1), (o) => {
+      data.boost = o.x;
+      save();
+      applyAudioFx(video);
+    });
   }
 
   function stopPlayer() {
@@ -5176,6 +5658,7 @@
       player = new Player(video, s, pickVideo(s), start, true);
       posTimer = setInterval(savePos, 5000);
       startTracking(id, s.details.length);
+      startSponsorBlock(id);
     } catch (e) {
       if (t !== token) return;
       // nedostupné video: vysvetlenie + odkaz na pôvodný YouTube (&jt=0 = bez presmerovania späť sem)
