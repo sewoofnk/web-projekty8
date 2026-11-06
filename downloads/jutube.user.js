@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.13.1
+// @version      2.13.2
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -107,7 +107,7 @@
   const META = `// ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.13.1
+// @version      2.13.2
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -1937,7 +1937,7 @@
     const shown = sideExpanded ? chans : chans.slice(0, 7);
     setHTML(el, `
       ${item('home', '#', SN_ICONS.home, 'Domov')}
-      ${item('downloads', '#downloads', SN_ICONS.download, 'Stiahnuté')}
+      ${item('shorts', '#shorts', SN_ICONS.shorts, 'Shorts')}
       ${item('music', '#music', SN_ICONS.music, 'Hudba')}
       <div class="sn-sep"></div>
       <a class="sn-h${a === 'subs' ? ' on' : ''}" href="#feed=subs">Odbery ›</a>
@@ -1951,6 +1951,7 @@
       ${item('playlists', '#feed=playlists', SN_ICONS.list, 'Zoznamy')}
       ${item('later', '#feed=later', SN_ICONS.later, 'Pozrieť neskôr')}
       ${item('liked', '#feed=liked', SN_ICONS.liked, 'Obľúbené videá')}
+      ${item('downloads', '#downloads', SN_ICONS.download, 'Stiahnuté')}
       <div class="sn-sep"></div>
       ${item('settings', '#settings', SN_ICONS.settings, 'Nastavenia')}
       <p class="sn-foot">JUTUBE by Olejnik</p>`);
