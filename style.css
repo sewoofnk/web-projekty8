@@ -737,6 +737,28 @@ a.card-link:hover {
   filter: brightness(1.12);
 }
 
+/* Contact row: two cells at the bottom */
+.contact-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.contact-cell {
+  cursor: default;
+}
+
+.contact-cell .contact-form {
+  padding-top: 0;
+}
+
+@media (max-width: 700px) {
+  .contact-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Contact form */
 .contact-form {
   display: flex;

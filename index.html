@@ -369,8 +369,11 @@ async function downloadJutube() {
           </div>
         </a>
 
-        <!-- Kontakt -->
-        <div class="card" id="kontakt">
+      </div>
+
+      <!-- Kontakt: dve bunky úplne dole -->
+      <div class="contact-row" id="kontakt">
+        <div class="card contact-cell">
           <div class="card-icon" style="--icon-color: #0ea5e9; --icon-bg: #f0f9ff;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -379,18 +382,11 @@ async function downloadJutube() {
           </div>
           <div class="card-body">
             <h3 class="card-title">Kontakt</h3>
-            <p class="card-desc">Kontaktujte ma pre viac informácií o projektoch.</p>
+            <p class="card-desc">Kontaktujte ma pre viac informácií o projektoch. Vyplňte formulár a správa mi príde na e-mail.</p>
           </div>
-          <div class="card-footer">
-            <button type="button" class="card-link card-toggle contact-toggle" aria-expanded="false" aria-controls="contact-form-wrap">Napísať správu
-              <svg class="chevron" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fill-rule="evenodd" d="M5.22 7.22a.75.75 0 0 1 1.06 0L10 10.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.28a.75.75 0 0 1 0-1.06z"/>
-              </svg>
-            </button>
-          </div>
-          <div class="card-details" id="contact-form-wrap">
-            <div class="card-details-inner">
-              <form class="contact-form" id="contact-form" novalidate>
+        </div>
+        <div class="card contact-cell">
+          <form class="contact-form" id="contact-form" novalidate>
                 <input type="hidden" name="access_key" value="a6ec486e-5a79-43e6-9452-b9ced9981c2b">
                 <input type="hidden" name="from_name" value="molej.dev kontaktný formulár">
                 <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
@@ -407,10 +403,7 @@ async function downloadJutube() {
                 <button type="submit" class="download-btn contact-submit">Odoslať</button>
                 <p class="form-status" id="contact-status" role="status" aria-live="polite"></p>
               </form>
-            </div>
-          </div>
         </div>
-
       </div>
     </div>
   </main>
