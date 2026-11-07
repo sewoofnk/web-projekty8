@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.14.0
+// @version      2.15.0
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -107,7 +107,7 @@
   const META = `// ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.14.0
+// @version      2.15.0
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -620,6 +620,7 @@
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
   const data = Object.assign({ history: [], pos: {}, quality: 1080, channels: [], autoplay: true, albums: [] }, load());
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} };
+  { const tvq = new URLSearchParams(location.search).get('tv'); if (tvq === '1' || tvq === '0') { data.tvMode = tvq === '1'; save(); } }
   function addHistory(v) {
     data.history = [v, ...data.history.filter((x) => x.id !== v.id)].slice(0, 60);
     save();
@@ -1492,6 +1493,7 @@
         <form id="f"><input id="q" type="search" placeholder="Hľadať na YouTube" autocomplete="off" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-controls="sugg"><button aria-label="Hľadať">${ICON_SEARCH}</button><div class="sugg" id="sugg" role="listbox" hidden></div></form>
         <div class="hicons">
           <span class="bellwrap"><button class="hicon" id="bell" title="Nové videá" aria-label="Nové videá">🔔<span class="badge" id="bell-badge" hidden></span></button><div class="menu bell-menu" id="bell-menu" hidden></div></span>
+          <button class="hicon${data.tvMode ? ' on' : ''}" id="tv-btn" title="${data.tvMode ? 'Vypnúť TV režim' : 'TV režim'}" aria-label="TV režim">📺</button>
           <a class="hicon" href="#settings" title="Nastavenia" aria-label="Nastavenia">⚙</a>
         </div>
         <div class="acct" id="acct"></div>
@@ -1528,6 +1530,7 @@
     });
     setupSuggestions();
     setupBell();
+    document.getElementById('tv-btn').onclick = toggleTvMode;
     addEventListener('hashchange', route);
     route();
   }
@@ -2231,6 +2234,13 @@
     badge.textContent = count > 9 ? '9+' : String(count);
   }
 
+  // zapne / vypne TV režim (stránka sa obnoví, aby sa použili správne štýly a ovládanie)
+  function toggleTvMode() {
+    data.tvMode = !data.tvMode;
+    save();
+    location.reload();
+  }
+
   function setupBell() {
     const btn = document.getElementById('bell');
     const menu = document.getElementById('bell-menu');
@@ -2339,6 +2349,9 @@
       <div class="set-row" style="cursor:default;flex-direction:column;align-items:flex-start"><b>Farebná téma</b>
         <div class="theme-row" id="theme-row">${THEMES
           .map(([k, l, g]) => `<button class="swatch${(data.theme || 'sapphire') === k ? ' on' : ''}" data-theme-pick="${k}"><i style="background:${g}"></i>${l}</button>`).join('')}</div></div>
+      <h2>TV režim</h2>
+      <div class="set-row"><span><b>📺 TV režim</b><br><span class="mt">Rozhranie sa zväčší a dá sa ovládať šípkami a OK na diaľkovom ovládači. YouTube odkazy sa otvárajú rovno v JUTUBE. Zapnúť ho vieš aj adresou <code>youtube.com/robots.txt?tv=1</code>.</span></span><button class="pill pill-w" id="set-tv">${data.tvMode ? 'Vypnúť' : 'Zapnúť'}</button></div>
+      <div class="set-row"><span><b>Veľkosť v TV režime</b></span>${sel('tvScale', [[0, 'Automaticky'], [1, '100 %'], [1.25, '125 %'], [1.5, '150 %'], [1.75, '175 %'], [2, '200 %']], data.tvScale || 0)}</div>
       <h2>Aplikácia v počítači</h2>
       ${isApp()
         ? '<div class="set-row"><span><b>✅ JUTUBE beží ako aplikácia</b><br><span class="mt">Má vlastné okno a ikonu. Pripnúť ju môžeš pravým klikom na ikonu na paneli úloh.</span></span></div>'
@@ -2398,6 +2411,7 @@
       }
     };
     document.getElementById('set-install')?.addEventListener('click', installApp);
+    document.getElementById('set-tv').onclick = toggleTvMode;
     document.getElementById('bk-export').onclick = () => {
       const copy = { ...data };
       delete copy.adminKey;
@@ -2446,6 +2460,7 @@
         data[k] = k === 'cc' || k === 'eq' ? el.value : +el.value;
         save();
         if (k === 'eq' || k === 'boost') applyAudioFx(video);
+        if (k === 'tvScale') tvApplyScale?.();
         toast('Uložené');
       };
     });
@@ -5861,7 +5876,301 @@
   });
   addEventListener('pagehide', savePos);
 
+  // ================= TV režim =================
+  // Ovládanie diaľkovým ovládačom (šípky, OK, Späť, tlačidlá prehrávania) a zväčšené rozhranie pre TV.
+  // Zapína sa tlačidlom 📺 v hlavičke, v Nastaveniach alebo adresou youtube.com/robots.txt?tv=1 (vypnutie ?tv=0).
+  let tvApplyScale = null;
+  function startTvMode() {
+    if (window.__jutubeTv) return; // aplikácia JUTUBE TV (Android TV) má vlastné ovládanie
+    window.__jutubeTv = true;
+    const inApp = !!window.JutubeTV;
+
+    const CSS = `
+      ${inApp ? '*{cursor:none!important}' : ''}
+      :focus{outline:none}
+      .tv-f{outline:3px solid #fff!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(139,92,246,.75)!important;border-radius:12px;position:relative;z-index:2}
+      .card.tv-f{transform:scale(1.04);transition:transform .12s}
+      .player.tv-f{outline-offset:-3px}
+      .pill.tv-f,.chip.tv-f,.yc-b.tv-f,.hicon.tv-f{border-radius:999px}
+      .tv-toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:99999;padding:12px 22px;border-radius:12px;background:rgba(10,12,36,.92);color:#fff;font:600 16px system-ui,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+      body.tv-mode .tabbar{display:none}
+    `;
+
+    const FOCUSABLE = 'a[href],summary,button:not([disabled]),input:not([type=hidden]),select,textarea,[tabindex]:not([tabindex="-1"])';
+    const isText = (el) => !!el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|email|url|password|number|)$/.test(el.type)));
+    const mainVideo = () => document.getElementById('vid');
+    const playerBox = () => mainVideo()?.closest('.player');
+    const onWatchPage = () => /(^#|&)v=/.test(location.hash);
+    const onShortsPage = () => /(^#|&)shorts\b/.test(location.hash);
+
+    // zväčšenie rozhrania podľa šírky obrazovky (alebo podľa nastavenia)
+    tvApplyScale = () => {
+      const auto = Math.min(2.2, Math.max(1, innerWidth / 1280));
+      const z = +data.tvScale || auto;
+      document.documentElement.style.zoom = z > 1.04 ? z.toFixed(2) : '';
+    };
+    addEventListener('resize', tvApplyScale);
+
+    // ---------- príprava stránky (JUTUBE si ju postaví sám pri štarte aj pri každom prechode) ----------
+    setInterval(setup, 600);
+    function setup() {
+      if (!document.head || !document.getElementById('app')) return;
+      if (!document.getElementById('tv-css')) {
+        const st = document.createElement('style');
+        st.id = 'tv-css';
+        st.textContent = CSS;
+        document.head.append(st);
+        document.body.classList.add('tv-mode');
+        tvApplyScale();
+      }
+      const p = playerBox();
+      if (p && !p.hasAttribute('tabindex')) p.tabIndex = 0;
+      if (!currentEl()) focusDefault();
+    }
+
+    // ---------- čo je zamerané ----------
+    let focused = null;
+    function currentEl() {
+      const el = document.activeElement;
+      return el && el !== document.body && el !== document.documentElement && el.isConnected && visible(el) ? el : null;
+    }
+    function setFocus(el, scroll = true) {
+      if (!el) return;
+      focused?.classList.remove('tv-f');
+      focused = el;
+      el.classList.add('tv-f');
+      el.focus({ preventScroll: true });
+      if (scroll) el.scrollIntoView({ block: el.closest('.side,.hrow,.chips-row') ? 'nearest' : 'center', inline: 'nearest', behavior: 'smooth' });
+      // ovládanie prehrávača sa ukáže, keď sa naň presunieme
+      const box = el.closest('.player');
+      if (box) box.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', bubbles: true }));
+    }
+    document.addEventListener('focusout', () => focused?.classList.remove('tv-f'));
+    document.addEventListener('focusin', (e) => {
+      if (focused && focused !== e.target) focused.classList.remove('tv-f');
+      focused = e.target;
+      if (e.target.matches?.(FOCUSABLE) || e.target === playerBox()) e.target.classList.add('tv-f');
+    });
+
+    function visible(el) {
+      if (el.closest('[hidden]')) return false;
+      const r = el.getBoundingClientRect();
+      if (r.width < 4 || r.height < 4) return false;
+      const cs = getComputedStyle(el);
+      return cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity !== 0;
+    }
+
+    // vrstva, ktorá je práve navrchu – šípky sa pohybujú len v nej
+    function layer() {
+      if (document.fullscreenElement) return document.fullscreenElement;
+      const open = [...document.querySelectorAll('.pc-overlay,.yc-menu:not([hidden]),.menu:not([hidden]),.cmenu,.lib-pop')].filter(visible);
+      return open[open.length - 1] || document.body;
+    }
+
+    function candidates(scope) {
+      const all = [...scope.querySelectorAll(FOCUSABLE)].filter(visible);
+      const p = playerBox();
+      if (p && scope.contains(p) && visible(p) && !all.includes(p)) all.push(p);
+      // vnorené prvky (napr. ⋮ vnútri karty videa) preskakujeme – karta sa otvára celá
+      return all.filter((el) => !all.some((o) => o !== el && o.contains(el) && o !== p));
+    }
+
+    function focusDefault() {
+      if (onWatchPage() && playerBox() && visible(playerBox())) return setFocus(playerBox(), false);
+      const scope = layer();
+      const inView = candidates(scope).filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top >= 0 && r.top < innerHeight && !isText(el);
+      });
+      const card = inView.find((el) => el.matches('.card,.scard,.short,.lib-row'));
+      setFocus(card || inView.find((el) => el.closest('#app')) || inView[0], false);
+    }
+
+    // ---------- pohyb šípkami: najbližší prvok v danom smere ----------
+    const region = (el) => el.closest('.sidenav,.mh,#app,.side') || document.body;
+    // vzdialenosť dvoch úsečiek (0, ak sa prekrývajú)
+    const gap = (a1, a2, b1, b2) => Math.max(0, b1 - a2, a1 - b2);
+    function move(dir) {
+      const cur = currentEl();
+      if (!cur) return focusDefault();
+      const scope = layer();
+      let list = candidates(scope);
+      const box = cur.closest('.player');
+      // v ovládaní prehrávača: vľavo/vpravo medzi tlačidlami, hore/dole späť na video
+      if (box && cur !== box) {
+        if (dir === 'up' || dir === 'down') return setFocus(box, false);
+        list = list.filter((el) => box.contains(el) && el !== box);
+      } else if (cur === box) {
+        list = list.filter((el) => !box.contains(el) || el === box);
+      }
+      const a = cur.getBoundingClientRect();
+      const ax = (a.left + a.right) / 2;
+      const ay = (a.top + a.bottom) / 2;
+      let best = null;
+      let bestScore = Infinity;
+      for (const el of list) {
+        if (el === cur || el.contains(cur)) continue;
+        const b = el.getBoundingClientRect();
+        const bx = (b.left + b.right) / 2;
+        const by = (b.top + b.bottom) / 2;
+        let main;
+        let side;
+        if (dir === 'right') { main = b.left - a.right; side = gap(a.top, a.bottom, b.top, b.bottom); if (bx <= ax) continue; }
+        if (dir === 'left') { main = a.left - b.right; side = gap(a.top, a.bottom, b.top, b.bottom); if (bx >= ax) continue; }
+        if (dir === 'down') { main = b.top - a.bottom; side = gap(a.left, a.right, b.left, b.right); if (by <= ay) continue; }
+        if (dir === 'up') { main = a.top - b.bottom; side = gap(a.left, a.right, b.left, b.right); if (by >= ay) continue; }
+        let score = Math.max(main, -20) + side * 3 + (side > 0 ? 40 : 0);
+        // hore/dole radšej v rovnakej časti (bočné menu / horná lišta / obsah)
+        if ((dir === 'up' || dir === 'down') && region(el) !== region(cur)) score += 600;
+        if (score < bestScore) { bestScore = score; best = el; }
+      }
+      if (best) return setFocus(best);
+      // nič ďalej – aspoň posuň stránku (dotiahnu sa ďalšie videá)
+      if (dir === 'down') scrollBy({ top: innerHeight * 0.6, behavior: 'smooth' });
+      if (dir === 'up') scrollBy({ top: -innerHeight * 0.6, behavior: 'smooth' });
+    }
+
+    // ---------- prehrávač ----------
+    const toggleVideo = (v) => { if (v) v.paused ? v.play().catch(() => {}) : v.pause(); };
+    function seekBy(v, s) {
+      if (!v || !isFinite(v.duration)) return;
+      v.currentTime = Math.max(0, Math.min(v.duration - 1, v.currentTime + s));
+      playerBox()?.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', bubbles: true }));
+    }
+    const activeVideo = () => (onShortsPage() ? [...document.querySelectorAll('.short video')].find((v) => v.currentSrc) || null : mainVideo());
+    // lib prehrávač (sekcia Stiahnuté)
+    const libMedia = () => document.getElementById('lib-el');
+
+    // ---------- klávesy ovládača (aj kódy kláves Samsung / LG) ----------
+    const KEYCODE = { 415: 'MediaPlay', 19: 'MediaPause', 10252: 'MediaPlayPause', 417: 'MediaFastForward', 412: 'MediaRewind', 413: 'MediaStop' };
+    const BACK_CODES = [10009, 461, 27, 8];
+    addEventListener('keydown', (e) => {
+      const k = e.key && e.key !== 'Unidentified' ? e.key : KEYCODE[e.keyCode] || e.key;
+      const cur = currentEl();
+      const stop = () => { e.preventDefault(); e.stopPropagation(); };
+
+      // Späť
+      if (k === 'GoBack' || k === 'BrowserBack' || k === 'XF86Back' || BACK_CODES.includes(e.keyCode) && !(e.keyCode === 8 && isText(cur))) {
+        if (window.jutubeTvBack()) return stop();
+        return;
+      }
+
+      // tlačidlá prehrávania na ovládači
+      const media = libMedia() || activeVideo();
+      if (k === 'MediaPlayPause' || k === 'MediaPlay' || k === 'MediaPause') { stop(); return toggleVideo(media); }
+      if (k === 'MediaFastForward' || k === 'MediaTrackNext') { stop(); return seekBy(media, 10); }
+      if (k === 'MediaRewind' || k === 'MediaTrackPrevious') { stop(); return seekBy(media, -10); }
+
+      // písanie do vyhľadávania: šípky vľavo/vpravo hýbu kurzorom, hore/dole odchádzajú z poľa
+      if (isText(cur)) {
+        if (k === 'Enter' && inApp && cur.tagName === 'INPUT' && !cur.dataset.tvTyped) {
+          cur.dataset.tvTyped = '1';
+          window.JutubeTV?.showKeyboard();
+          return stop();
+        }
+        if (k === 'ArrowUp' || k === 'ArrowDown') { stop(); delete cur.dataset.tvTyped; return move(k === 'ArrowUp' ? 'up' : 'down'); }
+        return;
+      }
+      // posuvník hlasitosti: vľavo/vpravo mení hodnotu
+      if (cur?.type === 'range' && (k === 'ArrowLeft' || k === 'ArrowRight')) return;
+
+      // Shorts: hore/dole = ďalší/predchádzajúci short (rieši JUTUBE), OK = pauza
+      if (onShortsPage() && (!cur || cur.closest('.short') || cur === document.body)) {
+        if (k === 'ArrowUp' || k === 'ArrowDown') return;
+        if (k === 'Enter' && (!cur || !cur.matches('button'))) { stop(); return toggleVideo(activeVideo()); }
+      }
+
+      // zameraný prehrávač (alebo celá obrazovka): OK = pauza, vľavo/vpravo = −10/+10 s
+      const p = playerBox();
+      const full = !!p && document.fullscreenElement === p;
+      const onPlayer = p && (cur === p || (full && !(cur && cur !== p && p.contains(cur))));
+      if (onPlayer) {
+        const v = mainVideo();
+        if (k === 'Enter') { stop(); return toggleVideo(v); }
+        if (k === 'ArrowLeft') { stop(); return seekBy(v, -10); }
+        if (k === 'ArrowRight') { stop(); return seekBy(v, 10); }
+        // hore = ovládanie prehrávača (titulky, nastavenia, celá obrazovka…)
+        if (k === 'ArrowUp') {
+          stop();
+          const btn = [...p.querySelectorAll('.yc-bar .yc-b')].filter(visible);
+          return btn.length ? setFocus(btn[0], false) : move('up');
+        }
+        if (k === 'ArrowDown' && full) { stop(); return; }
+      }
+
+      const dir = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k];
+      if (dir) { stop(); return move(dir); }
+      if (k === 'Enter' && cur) {
+        stop();
+        if (cur.tagName === 'SELECT') return cur.showPicker?.();
+        cur.click();
+      }
+    }, true);
+
+    // po prechode na inú stránku zameraj prvý rozumný prvok
+    addEventListener('hashchange', () => {
+      focused?.classList.remove('tv-f');
+      focused = null;
+      document.activeElement?.blur?.();
+      setTimeout(() => { if (!currentEl()) focusDefault(); }, 350);
+      setTimeout(() => { if (!currentEl()) focusDefault(); }, 1200);
+    });
+
+    // ---------- tlačidlo Späť (true = spracované; false = nechaj prehliadač / aplikáciu) ----------
+    let lastBack = 0;
+    window.jutubeTvBack = () => {
+      if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return true; }
+      // otvorená ponuka / panel → zavrieť
+      const top = layer();
+      if (top !== document.body) {
+        const x = top.querySelector('.pc-x,.dl-x,[aria-label="Zavrieť"]');
+        if (x) x.click();
+        else if (top.matches('.yc-menu,.menu,.cmenu')) top.hidden = true;
+        else if (top.matches('.lib-pop')) top.remove();
+        else document.body.click();
+        setTimeout(focusDefault, 50);
+        return true;
+      }
+      const cur = currentEl();
+      const p = playerBox();
+      if (p && cur && p.contains(cur) && cur !== p) { setFocus(p, false); return true; }
+      if (location.hash && location.hash !== '#') { history.back(); return true; }
+      if (!inApp) return false; // v prehliadači nech Späť robí, čo má
+      // domovská stránka: ukonči až po druhom stlačení
+      if (Date.now() - lastBack < 2500) return false;
+      lastBack = Date.now();
+      tvToast('Stlač Späť ešte raz na ukončenie JUTUBE');
+      return true;
+    };
+
+    function tvToast(text) {
+      document.querySelector('.tv-toast')?.remove();
+      const t = document.createElement('div');
+      t.className = 'tv-toast';
+      t.textContent = text;
+      document.body.append(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+  }
+
+  // YouTube odkazy (v popisoch, komentároch, vo výsledkoch…) sa otvárajú rovno v JUTUBE, nie na youtube.com
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const a = e.target.closest?.('a[href]');
+    if (!a) return;
+    let u;
+    try { u = new URL(a.href, location.href); } catch { return; }
+    if (!/(^|\.)(youtube\.com|youtu\.be)$/.test(u.hostname) || u.searchParams.get('jt') === '0') return;
+    const id = parseVideoId(u.href);
+    if (!id) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const t = parseInt(u.searchParams.get('t') || u.searchParams.get('start') || '', 10);
+    location.hash = `#v=${id}${t > 0 ? `&t=${t}` : ''}`;
+  }, true);
+
   // ================= štart =================
+  if (data.tvMode) startTvMode();
   // Počkáme, kým prehliadač dočíta robots.txt – inak by naše rozhranie prepísal svojím zobrazením textu.
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
