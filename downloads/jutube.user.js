@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.15.0
+// @version      2.15.1
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -107,7 +107,7 @@
   const META = `// ==UserScript==
 // @name         JUTUBE – YouTube bez reklám
 // @namespace    jutube
-// @version      2.15.0
+// @version      2.15.1
 // @description  Vlastná stránka na youtube.com/robots.txt: vyhľadávanie a vlastný prehrávač bez reklám.
 // @match        https://www.youtube.com/robots.txt*
 // @match        https://m.youtube.com/robots.txt*
@@ -848,6 +848,8 @@
     .wacts::-webkit-scrollbar{display:none}
     .wacts > *{flex:none}
     .sub-btn{margin-left:auto}
+    /* menu ⋯: v riadku s overflow-x by sa orezalo, preto je na mobile ako spodný panel nad lištou */
+    .more-menu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(84px + env(safe-area-inset-bottom));min-width:0;max-height:62vh;overflow-y:auto;z-index:80}
   }
   .menu-btn{font-size:20px;margin-right:-4px}
   .shell{display:flex;align-items:flex-start}
